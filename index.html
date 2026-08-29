@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>drafted</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <h1>drafted</h1>
+        </div>
+      </div>
+    </header>
+
+    <nav class="quicklinks" aria-label="Main navigation">
+      <div class="auth-area">
+        <span id="user-status">Not signed in</span>
+        <a id="login-btn" href="/auth/discord" class="discord-btn" aria-label="Sign in with Discord" title="Sign in with Discord">
+          <img src="https://cdn.simpleicons.org/discord/ffffff" alt="Discord"/>
+        </a>
+        <a id="logout-btn" href="/auth/logout" class="logout-btn" style="display:none;">Logout</a>
+      </div>
+      <div style="flex:1"></div>
+      <a class="link" href="/homework">Homework</a>
+      <a class="link" href="/trades">Trades</a>
+      <a class="link" href="/videos">Videos</a>
+      <a class="link nda-link" href="/nda">Submit an NDA</a>
+    </nav>
+
+    <section class="intro-page">
+      <p class="eyebrow">drafted</p>
+      <h2>Everything you need.</h2>
+      <p class="lede">Submit the NDA to get started.</p>
+      <div class="page-links">
+        <a href="/homework"><strong>Homework</strong><small></small></a>
+        <a href="/trades"><strong>Trades</strong><small></small></a>
+        <a href="/videos"><strong>Videos</strong><small>Library</small></a>
+        <a href="/nda"><strong>Submit an NDA</strong><small></small></a>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

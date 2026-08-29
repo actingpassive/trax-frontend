@@ -1,0 +1,15 @@
+{
+  "name": "trax-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Trax mentorship — frontend (vanilla HTML/CSS/JS, no bundler).",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "npx serve . -l 8080 --cors --no-clipboard",
+    "start": "npx serve . -l 8080 --cors --no-clipboard",
+    "serve": "npx serve . -l 8080 --cors --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

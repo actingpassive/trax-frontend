@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Videos | trax</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<main class="container content-page">
+		<a class="back-link" href="/">&larr; back</a>
+		<h2>Videos</h2>
+		<nav id="video-navigation" class="video-navigation" aria-label="Video sections"></nav>
+		<p id="video-status" class="lede">Loading videos...</p>
+		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
+		<section id="video-list" class="sections" aria-live="polite"></section>
+	</main>
+
+	<script src="config.js"></script>
+	<script src="videos.js"></script>
+</body>
+</html>
