@@ -88,8 +88,21 @@ async function loadVideos() {
 			if (!renderedSections.has(sectionKey)) renderedSections.set(sectionKey, []);
 			renderedSections.get(sectionKey).push(section);
 
+			const titleRow = document.createElement('div');
+			titleRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin:0 0 16px;';
+			if(video.thumbnail){
+			  const thumb = document.createElement('img');
+			  thumb.src = `${apiBase}${video.thumbnail}`;
+			  thumb.alt = '';
+			  thumb.loading = 'lazy';
+			  thumb.style.cssText = 'width:80px;height:45px;object-fit:cover;background:#16161b;border:1px solid #1f1f25;border-radius:4px;flex-shrink:0;';
+			  thumb.onerror = () => { thumb.style.display='none'; };
+			  titleRow.appendChild(thumb);
+			}
 			const title = document.createElement('h3');
 			title.textContent = video.name;
+			title.style.cssText = 'margin:0;font-family:Georgia,serif;font-size:1.4rem;';
+			titleRow.appendChild(title);
 
 			const wrapper = document.createElement('div');
 			wrapper.className = 'custom-player-wrapper';
@@ -104,6 +117,7 @@ async function loadVideos() {
 			player.className = 'video-player custom-video';
 			player.preload = 'metadata';
 			player.src = `${apiBase}${video.url}`;
+			if(video.thumbnail) player.poster = `${apiBase}${video.thumbnail}`;
 			player.addEventListener('contextmenu', event => event.preventDefault());
 
 			wrapper.innerHTML = `
@@ -216,7 +230,7 @@ async function loadVideos() {
 			});
 
 			wrapper.append(watermark);
-			section.append(title, wrapper);
+			section.append(titleRow, wrapper);
 		});
 		renderVideos();
 
