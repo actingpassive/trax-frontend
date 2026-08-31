@@ -9,11 +9,23 @@
 <body>
 	<main class="container content-page">
 		<a class="back-link" href="index.html">&larr; back</a>
-		<h2>Videos</h2>
-		<nav id="video-navigation" class="video-navigation" aria-label="Video sections"></nav>
+		<div class="videos-header">
+			<h2>Videos</h2>
+			<div class="card-head__right">
+				<span id="videoCount" class="card-sub">0 videos</span>
+				<div class="view-toggle" role="group" aria-label="View mode">
+					<button type="button" class="view-toggle__btn active" data-view-mode="list" aria-label="List view" aria-pressed="true">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01" stroke-linecap="round"/></svg>
+					</button>
+					<button type="button" class="view-toggle__btn" data-view-mode="grid" aria-label="Grid view" aria-pressed="false">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+					</button>
+				</div>
+			</div>
+		</div>
 		<p id="video-status" class="lede">Loading videos...</p>
 		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
-		<section id="video-list" class="sections" aria-live="polite"></section>
+		<section id="video-list" class="sections video-list" aria-live="polite"></section>
 	</main>
 
 	<script src="config.js"></script>
