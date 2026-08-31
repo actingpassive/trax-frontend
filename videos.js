@@ -1,3 +1,4 @@
+/* videos.js — drafted.world hardened forensic watermark + personalized burn polling */
 async function loadVideos(){
 	const status = document.getElementById('video-status');
 	const list = document.getElementById('video-list');
@@ -5,6 +6,398 @@ async function loadVideos(){
 	const countEl = document.getElementById('videoCount');
 	const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
 	let loadedVideos = [];
+
+	/* ---- hardened watermark helpers ---- */
+	function sanitizeViewer(s){
+		let v = (typeof s === 'string' ? s : String(s || ''));
+		v = v.trim().replace(/\s+/g, ' ');
+		if(!v) return 'viewer';
+		v = v.slice(0, 32);
+		return v || 'viewer';
+	}
+	function createWatermark(viewer){
+		const clean = sanitizeViewer(viewer);
+		const wrap = document.createElement('div');
+		wrap.className = 'video-watermark-tiled';
+		wrap.setAttribute('aria-hidden','true');
+		wrap.style.pointerEvents = 'none';
+		for(let i=0;i<9;i++){
+			const span = document.createElement('span');
+			span.className = 'video-watermark__tile';
+			span.textContent = 'drafted.world | @' + clean;
+			const r = (Math.random()*6 - 3).toFixed(2);
+			span.style.setProperty('--r', r + 'deg');
+			span.style.setProperty('--dx', '0px');
+			span.style.setProperty('--dy', '0px');
+			wrap.appendChild(span);
+		}
+		return wrap;
+	}
+	function createCanvasWatermark(viewer, stage){
+		const clean = sanitizeViewer(viewer);
+		const text = 'drafted.world | @' + clean;
+		const canvas = document.createElement('canvas');
+		canvas.className = 'video-watermark-canvas';
+		canvas.setAttribute('aria-hidden','true');
+		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:overlay;opacity:.55;z-index:2;';
+		let ro = null;
+		let rafId = 0;
+		function draw(){
+			const rect = stage.getBoundingClientRect();
+			if(!rect.width || !rect.height) return;
+			const dpr = window.devicePixelRatio || 1;
+			const ctx = canvas.getContext('2d');
+			if(!ctx) return;
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+			ctx.save();
+			ctx.scale(dpr, dpr);
+			ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+			ctx.fillStyle = 'rgba(255,255,255,0.55)';
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+			const cols = 3, rows = 3;
+			for(let r=0;r<rows;r++){
+				for(let c=0;c<cols;c++){
+					const x = (rect.width/cols)*(c+0.5);
+					const y = (rect.height/rows)*(r+0.5);
+					ctx.save();
+					ctx.translate(x, y);
+					const rot = (Math.random()*6 - 3) * Math.PI / 180;
+					ctx.rotate(rot);
+					ctx.shadowColor = 'rgba(0,0,0,0.85)';
+					ctx.shadowBlur = 4;
+					ctx.shadowOffsetY = 1;
+					ctx.fillText(text, 0, 0);
+					ctx.restore();
+				}
+			}
+			ctx.restore();
+		}
+		function resize(){
+			const rect = stage.getBoundingClientRect();
+			const dpr = window.devicePixelRatio || 1;
+			const w = Math.max(1, Math.floor(rect.width * dpr));
+			const h = Math.max(1, Math.floor(rect.height * dpr));
+			if(canvas.width !== w) canvas.width = w;
+			if(canvas.height !== h) canvas.height = h;
+			canvas.style.width = rect.width + 'px';
+			canvas.style.height = rect.height + 'px';
+			cancelAnimationFrame(rafId);
+			rafId = requestAnimationFrame(draw);
+		}
+		requestAnimationFrame(resize);
+		try{
+			ro = new ResizeObserver(resize);
+			ro.observe(stage);
+		}catch(e){
+			window.addEventListener('resize', resize);
+		}
+		canvas._wmCleanup = function(){
+			cancelAnimationFrame(rafId);
+			if(ro) try{ ro.disconnect(); }catch(e){}
+			window.removeEventListener('resize', resize);
+		};
+		// redraw occasionally to jitter canvas like DOM
+		let jitterIv = setInterval(draw, 4000 + Math.random()*2000);
+		canvas._wmJitterCleanup = function(){ clearInterval(jitterIv); };
+		document.addEventListener('visibilitychange', function vis(){
+			if(document.hidden){ clearInterval(jitterIv); }
+			else { clearInterval(jitterIv); jitterIv = setInterval(draw, 4000 + Math.random()*2000); }
+		});
+		return canvas;
+	}
+	function hardenWatermark(wrapper, el){
+		if(!wrapper || !el) return function(){};
+		el.style.pointerEvents = 'none';
+		el.style.userSelect = 'none';
+		// shadow DOM option commented but not enabled (closed shadow breaks poll).
+		// try{ const sh = wrapper.attachShadow({mode:'closed'}); sh.appendChild(el); }catch(e){}
+		let restoring = false;
+		function check(){
+			if(restoring) return;
+			const comp = window.getComputedStyle ? window.getComputedStyle(el) : null;
+			const displayNone = comp && comp.display === 'none';
+			const opacityZero = comp && parseFloat(comp.opacity) === 0;
+			const inlineHidden = el.style.display === 'none' || el.style.opacity === '0' || el.hidden;
+			const notConnected = !el.isConnected;
+			const hidden = inlineHidden || displayNone || opacityZero;
+			if(notConnected){
+				restoring = true;
+				try{ wrapper.appendChild(el); }catch(e){}
+				el.style.display = '';
+				el.style.opacity = '';
+				el.hidden = false;
+				el.style.pointerEvents = 'none';
+				el.style.userSelect = 'none';
+				restoring = false;
+			}else if(hidden){
+				restoring = true;
+				el.style.display = '';
+				el.style.opacity = '';
+				el.hidden = false;
+				el.style.pointerEvents = 'none';
+				el.style.userSelect = 'none';
+				// force visible if still computed hidden
+				const comp2 = window.getComputedStyle ? window.getComputedStyle(el) : null;
+				if(comp2 && (comp2.display === 'none' || parseFloat(comp2.opacity) === 0)){
+					if(el.classList.contains('video-watermark-tiled')) el.style.display = 'grid';
+					else el.style.display = 'block';
+					el.style.opacity = '0.55';
+				}
+				restoring = false;
+			}
+		}
+		let mo = null;
+		try{
+			mo = new MutationObserver(function(){ check(); });
+			mo.observe(wrapper, {childList:true, subtree:false, attributes:true, attributeFilter:['style','class','hidden']});
+			mo.observe(el, {attributes:true, attributeFilter:['style','class','hidden']});
+		}catch(e){}
+		// also watch removal via subtree changes
+		let mo2 = null;
+		try{
+			mo2 = new MutationObserver(function(){ if(!el.isConnected) check(); });
+			mo2.observe(document.body, {childList:true, subtree:true});
+		}catch(e){}
+		return function disconnect(){
+			try{ if(mo) mo.disconnect(); }catch(e){}
+			try{ if(mo2) mo2.disconnect(); }catch(e){}
+		};
+	}
+	function jitterWatermark(el, player){
+		if(!el || !el.querySelectorAll) return function(){};
+		const tiles = el.querySelectorAll('.video-watermark__tile');
+		if(!tiles.length) return function(){};
+		let timer = null;
+		let paused = false;
+		function jitter(){
+			if(paused || document.hidden) return;
+			if(player && player.paused) return;
+			tiles.forEach(function(tile){
+				const dx = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
+				const dy = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
+				tile.style.setProperty('--dx', dx.toFixed(1)+'px');
+				tile.style.setProperty('--dy', dy.toFixed(1)+'px');
+			});
+		}
+		function schedule(){
+			clearTimeout(timer);
+			const delay = 3000 + Math.random()*2000;
+			timer = setTimeout(function(){ jitter(); schedule(); }, delay);
+		}
+		schedule();
+		function onVis(){
+			if(document.hidden){ paused = true; clearTimeout(timer); }
+			else { paused = false; schedule(); }
+		}
+		document.addEventListener('visibilitychange', onVis);
+		let onPause = null, onPlay = null;
+		if(player){
+			onPause = function(){ clearTimeout(timer); };
+			onPlay = function(){ if(!document.hidden) schedule(); };
+			player.addEventListener('pause', onPause);
+			player.addEventListener('play', onPlay);
+		}
+		return function stop(){
+			clearTimeout(timer);
+			document.removeEventListener('visibilitychange', onVis);
+			if(player && onPause) player.removeEventListener('pause', onPause);
+			if(player && onPlay) player.removeEventListener('play', onPlay);
+		};
+	}
+	// export for testing / external use
+	try{
+		if(typeof window !== 'undefined'){
+			window.sanitizeViewer = sanitizeViewer;
+			window.createWatermark = createWatermark;
+			window.createCanvasWatermark = createCanvasWatermark;
+			window.hardenWatermark = hardenWatermark;
+			window.jitterWatermark = jitterWatermark;
+		}
+	}catch(e){}
+
+	/* ---- personalized manifest polling helper ---- */
+	function parseSignedParams(videoUrl){
+		try{
+			const u = new URL(String(videoUrl), location.origin);
+			return {expires: u.searchParams.get('expires'), signature: u.searchParams.get('signature')};
+		}catch(e){
+			const s = String(videoUrl||'');
+			const em = s.match(/[?&]expires=([^&]+)/);
+			const sm = s.match(/[?&]signature=([^&]+)/);
+			return {expires: em?decodeURIComponent(em[1]):null, signature: sm?decodeURIComponent(sm[1]):null};
+		}
+	}
+	function fetchPersonalizedManifest(video, ctx){
+		// ctx: {player, stage, wrapper, viewer, useCanvas}
+		const player = ctx.player;
+		const stage = ctx.stage;
+		const wrapper = ctx.wrapper;
+		const viewer = ctx.viewer;
+		if(!video || !video.id || !player || !stage) return function(){};
+		// if backend already provided personalizedUrl, prefer it and don't poll
+		if(video.personalizedUrl){
+			const personalizedUrl = String(video.personalizedUrl);
+			const cur = player.src || '';
+			if(cur !== personalizedUrl){
+				try{ player.src = (personalizedUrl.startsWith('http')||personalizedUrl.startsWith('/')) ? (personalizedUrl.startsWith('/')? apiBase + personalizedUrl : personalizedUrl) : personalizedUrl; player.load(); }catch(e){}
+			}
+			return function(){};
+		}
+		const parsed = parseSignedParams(video.url);
+		if(!parsed.expires || !parsed.signature) return function(){};
+		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature);
+		let cancelled = false;
+		let pollTimer = null;
+		let notice = null;
+		let attempt = 0;
+		const startMs = Date.now();
+		const MAX_MS = 90000;
+		const ALLOW_GENERIC_FALLBACK = false; // hardest: do not auto-play generic while queued
+		function ensureNotice(queueLabel){
+			if(notice && notice.isConnected) return notice;
+			notice = document.createElement('div');
+			notice.className = 'personalizing-notice';
+			notice.setAttribute('role','status');
+			notice.setAttribute('aria-live','polite');
+			const clean = sanitizeViewer(viewer);
+			notice.innerHTML = ''
+				+ '<div class="personalizing-notice__badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Personalizing your copy</div>'
+				+ '<div class="personalizing-notice__sub">drafted.world | @' + clean.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span class="personalizing-notice__queue">' + (queueLabel||'~45s') + '</span></div>'
+				+ '<div class="personalizing-notice__bar" aria-hidden="true"><div class="personalizing-notice__fill" style="width:8%"></div></div>'
+				+ '<div class="personalizing-notice__countdown">~45s</div>';
+			stage.appendChild(notice);
+			// deter playback of generic while queued if fallback disabled
+			if(!ALLOW_GENERIC_FALLBACK){
+				try{ player.pause(); }catch(e){}
+				// show big play as disabled state? keep watermark visible (already hardened)
+			}
+			return notice;
+		}
+		function updateNoticeProgress(queueLabel){
+			if(!notice || !notice.isConnected) return;
+			const elapsed = Date.now() - startMs;
+			const prog = Math.min(92, (elapsed/MAX_MS)*70 + Math.min(30, attempt*7));
+			const fill = notice.querySelector('.personalizing-notice__fill');
+			if(fill) fill.style.width = prog + '%';
+			const qEl = notice.querySelector('.personalizing-notice__queue');
+			if(qEl && queueLabel) qEl.textContent = '(' + queueLabel + ')';
+			const cd = notice.querySelector('.personalizing-notice__countdown');
+			if(cd){
+				const remain = Math.max(0, Math.ceil((MAX_MS - elapsed)/1000));
+				cd.textContent = remain > 6 ? '~' + remain + 's' : 'finalizing\u2026';
+			}
+		}
+		async function poll(){
+			if(cancelled) return;
+			if(Date.now() - startMs > MAX_MS){
+				if(notice && notice.isConnected){
+					const title = notice.querySelector('.personalizing-notice__badge');
+					if(title) title.textContent = 'Still personalizing\u2026';
+					const cd = notice.querySelector('.personalizing-notice__countdown');
+					if(cd) cd.textContent = 'will retry shortly';
+				}
+				// keep generic fallback disabled: leave notice and allow manual retry on click
+				if(notice){
+					notice.style.pointerEvents = 'auto';
+					notice.style.cursor = 'pointer';
+					notice.title = 'Tap to retry';
+					notice.addEventListener('click', function retry(){ notice.style.pointerEvents='none'; attempt=0; poll(); }, {once:true});
+				}
+				return;
+			}
+			attempt++;
+			try{
+				const url = baseManifestUrl + '&t=' + Date.now();
+				const res = await fetch(url, {credentials:'include', cache:'no-store'});
+				const cacheHeader = (res.headers.get('X-Personalized-Cache') || res.headers.get('x-personalized-cache') || '').toUpperCase();
+				const watermarkHeader = (res.headers.get('X-Watermark') || res.headers.get('x-watermark') || '').toLowerCase();
+				if(res.status === 202){
+					let data = null;
+					try{ data = await res.json(); }catch(e){}
+					const qp = data && (data.queuePosition||data.queue||data.position||data.queue_number);
+					const est = data && (data.estimatedWait||data.eta||data.wait);
+					const label = qp ? ('queue #' + qp) : (est ? ('~'+est+'s') : '~45s');
+					ensureNotice(label);
+					updateNoticeProgress(label);
+					if(cacheHeader) wrapper.setAttribute('data-personalized-cache','QUEUED');
+					if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader);
+					const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
+					pollTimer = setTimeout(poll, delay);
+					return;
+				}
+				if(res.ok){
+					let data = null;
+					try{ data = await res.json(); }catch(e){}
+					// HIT path: backend ready with burned segments
+					// Personalized MP4 url variants:
+					let personalizedUrl = null;
+					if(data && data.personalizedUrl) personalizedUrl = String(data.personalizedUrl);
+					else if(data && data.url) personalizedUrl = String(data.url);
+					else if(video.personalizedUrl) personalizedUrl = String(video.personalizedUrl);
+					else {
+						// construct MP4 personalized URL with flag
+						personalizedUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + '&personalized=1';
+					}
+					// if header HIT or segments present, swap source
+					const isHit = cacheHeader === 'HIT' || watermarkHeader === 'burned' || (data && Array.isArray(data.segments) && data.segments.length>0);
+					// graceful swap even if not HIT but 200 (backend may not set header yet)
+					if(notice && notice.isConnected){
+						const fill = notice.querySelector('.personalizing-notice__fill');
+						if(fill) fill.style.width = '100%';
+						setTimeout(function(){ if(notice && notice.parentNode) notice.remove(); }, 650);
+					}
+					if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
+					if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
+					// also if isHit false but data ok, still remove notice
+					else if(notice && notice.isConnected) setTimeout(function(){ try{ notice.remove(); }catch(e){} }, 400);
+					// Swap player src if we have a personalizedUrl and it's not already generic (avoid loop if backend returns same signed url)
+					let finalSrc = personalizedUrl;
+					if(finalSrc && finalSrc.startsWith('/') && apiBase) finalSrc = apiBase + finalSrc;
+					// If backend already burned into same /media/:id URL, no need to change; but we still ensure headers applied
+					// Only swap if finalSrc differs from current and either isHit or personalizedUrl contains personalized flag or differs
+					const curSrc = player.src || '';
+					// Normalize for comparison: strip apiBase prefix
+					function stripBase(s){ try{ const u=new URL(s, location.origin); return u.pathname+u.search; }catch(e){ return s; } }
+					const curStripped = stripBase(curSrc);
+					const newStripped = stripBase(finalSrc);
+					if(finalSrc && curStripped !== newStripped){
+						// preserve paused state; don't auto-play per hardening
+						const wasPlaying = !player.paused && !player.ended;
+						const curTime = player.currentTime || 0;
+						try{
+							player.src = finalSrc;
+							player.load();
+							if(curTime>0.5){ try{ player.currentTime = curTime; }catch(e){} }
+							if(wasPlaying){ player.play().catch(function(){}); }
+						}catch(e){}
+					} else {
+						// same URL but was 202 previously, ensure poster reload not needed; just remove overlay
+						if(notice && notice.isConnected) try{ notice.remove(); }catch(e){}
+					}
+					return;
+				}
+				// 401/403/404 etc -> treat as fallback to generic (remove notice if any)
+				if(notice && notice.isConnected){
+					// if 403/404 on manifest, likely not personalized yet or no access; keep generic playable
+					notice.remove();
+				}
+			}catch(e){
+				// network error -> retry
+				if(notice && notice.isConnected) updateNoticeProgress(null);
+				const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
+				pollTimer = setTimeout(poll, delay);
+				return;
+			}
+			// non-202 non-OK (e.g. 500) -> retry with backoff unless cancelled
+			const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
+			pollTimer = setTimeout(poll, delay);
+		}
+		// kickoff (fire and forget)
+		poll();
+		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
+	}
+	if(typeof window !== 'undefined') window.fetchPersonalizedManifest = fetchPersonalizedManifest;
 
 	function formatPlayerTime(sec){
 		if(!isFinite(sec) || sec < 0) sec = 0;
@@ -88,6 +481,9 @@ async function loadVideos(){
 		status.textContent = '';
 		updateCount(loadedVideos.length);
 		const articles = [];
+		const useCanvasLayer = (function(){
+			try{ return new URLSearchParams(location.search).has('canvas'); }catch(e){ return false; }
+		})();
 		loadedVideos.forEach(function(video){
 			const section = document.createElement('article');
 			section.className = 'section video-section';
@@ -143,20 +539,28 @@ async function loadVideos(){
 			player.setAttribute('playsinline','');
 			player.controls = false;
 			if(video.thumbnail) player.poster = '' + apiBase + video.thumbnail;
-			player.src = '' + apiBase + video.url;
+			// Prefer personalizedUrl when backend already burns; fallback to generic signed url
+			(function setInitialSrc(){
+				let src = video.personalizedUrl || video.url || '';
+				if(src){
+					const hasBase = String(src).startsWith('http') || String(src).startsWith('/');
+					if(hasBase && String(src).startsWith('/')) src = '' + apiBase + src;
+					else if(!hasBase) src = '' + apiBase + '/' + String(src).replace(/^\//,'');
+					// append personalized flag if we know burn is enabled? keep generic for now
+					player.src = String(src);
+				}
+			})();
 			try{ player.load(); }catch(e){}
 			player.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 			player.addEventListener('error', function(e){
 				console.error('video load error', video.id, e);
 			});
 
-			const watermark = document.createElement('div');
-			watermark.className = 'video-watermark';
-			try{
-				const viewer = video.viewer || '';
-				watermark.textContent = 'DRAFTED | ' + viewer;
-			}catch(e){
-				watermark.textContent = 'DRAFTED';
+			const viewerName = video.viewer || '';
+			const watermark = createWatermark(viewerName);
+			let canvasLayer = null;
+			if(useCanvasLayer){
+				try{ canvasLayer = createCanvasWatermark(viewerName, stage); }catch(e){}
 			}
 
 			const bigPlayBtn = document.createElement('div');
@@ -168,7 +572,14 @@ async function loadVideos(){
 			stage.appendChild(player);
 			stage.appendChild(bigPlayBtn);
 			stage.appendChild(watermark);
+			if(canvasLayer) stage.appendChild(canvasLayer);
 			wrapper.appendChild(stage);
+
+			// harden + jitter (keep until player removed)
+			const unharden = hardenWatermark(wrapper, watermark);
+			const stopJitter = jitterWatermark(watermark, player);
+			let unhardenCanvas = null;
+			if(canvasLayer) unhardenCanvas = hardenWatermark(wrapper, canvasLayer);
 
 			const controls = document.createElement('div');
 			controls.className = 'video-player-controls';
@@ -289,6 +700,12 @@ async function loadVideos(){
 
 				// toggle play
 				function togglePlay(){
+					// if personalizing notice is showing and generic fallback disabled, don't play generic
+					const notice = stage.querySelector('.personalizing-notice');
+					if(notice && notice.isConnected){
+						// allow click to retry but not play
+						return;
+					}
 					if(player.paused) player.play().catch(function(){});
 					else player.pause();
 				}
@@ -492,6 +909,26 @@ async function loadVideos(){
 						else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
 					}
 				});
+
+				// personalized burn polling (only if not already personalizedUrl)
+				let cancelPoll = null;
+				// defer to next tick so DOM is mounted
+				setTimeout(function(){
+					if(!video.personalizedUrl){
+						cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: wrapper, viewer: viewerName});
+					}
+				}, 120);
+
+				// cleanup when section removed (observer)
+				// store handles for visibility pause cleanup
+				section._wmCleanup = function(){
+					try{ unharden(); }catch(e){}
+					try{ stopJitter(); }catch(e){}
+					try{ if(unhardenCanvas) unhardenCanvas(); }catch(e){}
+					try{ if(canvasLayer && canvasLayer._wmCleanup) canvasLayer._wmCleanup(); }catch(e){}
+					try{ if(canvasLayer && canvasLayer._wmJitterCleanup) canvasLayer._wmJitterCleanup(); }catch(e){}
+					try{ if(cancelPoll) cancelPoll(); }catch(e){}
+				};
 			})();
 		});
 		list.replaceChildren(...articles);
