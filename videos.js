@@ -491,15 +491,22 @@ async function loadVideos(){
 			const titleRow = document.createElement('div');
 			titleRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin:0 0 16px;';
 			const thumbWrap = document.createElement('div');
-			thumbWrap.style.cssText = 'width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#16161b;border:1px solid #1f1f25;display:flex;align-items:center;justify-content:center;';
+			thumbWrap.style.cssText = 'width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#16161b;border:1px solid #1f1f25;display:flex;align-items:center;justify-content:center;position:relative;';
 			if(video.thumbnail){
 				const thumb = document.createElement('img');
 				thumb.src = '' + apiBase + video.thumbnail;
 				thumb.alt = '';
 				thumb.loading = 'lazy';
+				thumb.crossOrigin = 'anonymous';
+				thumb.setAttribute('crossorigin','anonymous');
 				thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
 				thumb.onerror = function(){ thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>'; };
 				thumbWrap.appendChild(thumb);
+				const thumbWm = document.createElement('div');
+				thumbWm.className = 'thumb-watermark';
+				thumbWm.setAttribute('aria-hidden','true');
+				thumbWm.textContent = 'drafted.world | @' + sanitizeViewer(video.viewer || '');
+				thumbWrap.appendChild(thumbWm);
 			}else{
 				thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>';
 			}
@@ -533,6 +540,8 @@ async function loadVideos(){
 			const player = document.createElement('video');
 			player.className = 'video-player custom-video';
 			player.preload = 'metadata';
+			player.crossOrigin = 'anonymous';
+			player.setAttribute('crossorigin','anonymous');
 			player.playsInline = true;
 			player.setAttribute('playsinline','');
 			player.controls = false;
