@@ -23,6 +23,20 @@
 				</div>
 			</div>
 		</div>
+		<div class="video-filters" role="toolbar" aria-label="Filter videos">
+			<label for="filterDay" class="sr-only">Filter by Day</label>
+			<select id="filterDay" aria-label="Filter by Day">
+				<option value="">All Days</option>
+				<option value="Day 1">Day 1</option>
+				<option value="Day 2">Day 2</option>
+				<option value="Day 3">Day 3</option>
+				<option value="Day 4">Day 4</option>
+			</select>
+			<label for="filterTopic" class="sr-only">Filter by Topic</label>
+			<select id="filterTopic" aria-label="Filter by Topic" disabled>
+				<option value="">Select Day first</option>
+			</select>
+		</div>
 		<p id="video-status" class="lede">Loading videos...</p>
 		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
 		<section id="video-list" class="sections video-list" aria-live="polite"></section>

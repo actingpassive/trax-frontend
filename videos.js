@@ -1,4 +1,11 @@
 /* videos.js — drafted.world hardened forensic watermark + personalized burn polling */
+const VIDEO_SECTIONS = {
+	"Day 1": ["Amd", "Orderblocks", "OHLC", "OLHC"],
+	"Day 2": ["Daily bias", "Key opens", "SMT Divergence"],
+	"Day 3": ["Protected High/Low", "Narrative", "IDM"],
+	"Day 4": ["Net GEX", "Pinning", "0dte", "Open Intrest"]
+};
+
 async function loadVideos(){
 	const status = document.getElementById('video-status');
 	const list = document.getElementById('video-list');
@@ -6,6 +13,132 @@ async function loadVideos(){
 	const countEl = document.getElementById('videoCount');
 	const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
 	let loadedVideos = [];
+	let filteredVideos = [];
+	let filterDay = '';
+	let filterTopic = '';
+
+	/* ---- Day/Topic filter (matches admin VIDEO_SECTIONS) ---- */
+	function getQueryFilter(){
+		try{
+			const p = new URLSearchParams(location.search);
+			const qDay = p.get('day') || '';
+			const qTopic = p.get('topic') || '';
+			return {qDay: qDay, qTopic: qTopic};
+		}catch(e){ return {qDay:'', qTopic:''}; }
+	}
+	function syncQueryParam(){
+		try{
+			const url = new URL(location.href);
+			if(filterDay) url.searchParams.set('day', filterDay);
+			else url.searchParams.delete('day');
+			if(filterTopic) url.searchParams.set('topic', filterTopic);
+			else url.searchParams.delete('topic');
+			history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
+		}catch(e){}
+	}
+	function persistFilter(){
+		try{
+			if(filterDay) localStorage.setItem('drafted-video-filter-day', filterDay);
+			else localStorage.removeItem('drafted-video-filter-day');
+			if(filterTopic) localStorage.setItem('drafted-video-filter-topic', filterTopic);
+			else localStorage.removeItem('drafted-video-filter-topic');
+		}catch(e){}
+		syncQueryParam();
+	}
+	function getFilteredVideos(){
+		return loadedVideos.filter(function(v){
+			const dayOk = !filterDay || v.day === filterDay;
+			const topicOk = !filterTopic || (v.topic && String(v.topic).toLowerCase() === String(filterTopic).toLowerCase());
+			return dayOk && topicOk;
+		});
+	}
+	function populateFilterTopic(){
+		const topicSel = document.getElementById('filterTopic');
+		if(!topicSel) return;
+		topicSel.innerHTML = '';
+		if(!filterDay || !VIDEO_SECTIONS[filterDay]){
+			topicSel.disabled = true;
+			const opt = document.createElement('option');
+			opt.value = '';
+			opt.textContent = 'Select Day first';
+			opt.selected = true;
+			topicSel.appendChild(opt);
+			return;
+		}
+		topicSel.disabled = false;
+		const all = document.createElement('option');
+		all.value = '';
+		all.textContent = 'All Topics';
+		if(!filterTopic) all.selected = true;
+		topicSel.appendChild(all);
+		VIDEO_SECTIONS[filterDay].forEach(function(t){
+			const o = document.createElement('option');
+			o.value = t;
+			o.textContent = t;
+			if(filterTopic && String(filterTopic).toLowerCase() === String(t).toLowerCase()) o.selected = true;
+			topicSel.appendChild(o);
+		});
+		// if filterTopic not in current day's list, keep All Topics selected but don't clear state yet — caller resets
+	}
+	function applyFilterAndRender(){
+		filteredVideos = getFilteredVideos();
+		renderVideos();
+	}
+	function initFilters(){
+		const daySel = document.getElementById('filterDay');
+		const topicSel = document.getElementById('filterTopic');
+		if(!daySel || !topicSel) return;
+		// restore from query param > localStorage
+		let q = getQueryFilter();
+		let storedDay = '';
+		let storedTopic = '';
+		try{ storedDay = localStorage.getItem('drafted-video-filter-day') || ''; }catch(e){}
+		try{ storedTopic = localStorage.getItem('drafted-video-filter-topic') || ''; }catch(e){}
+		if(q.qDay && VIDEO_SECTIONS[q.qDay]) filterDay = q.qDay;
+		else if(storedDay && VIDEO_SECTIONS[storedDay]) filterDay = storedDay;
+		else filterDay = '';
+		if(q.qTopic) filterTopic = q.qTopic;
+		else if(storedTopic) filterTopic = storedTopic;
+		else filterTopic = '';
+		// validate topic belongs to day; if day empty, topic must be empty; if topic not in day's list, reset
+		if(!filterDay) filterTopic = '';
+		else if(filterTopic){
+			const valid = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
+			if(!valid) filterTopic = '';
+		}
+		if(filterDay) daySel.value = filterDay;
+		else daySel.value = '';
+		populateFilterTopic();
+		if(filterTopic && topicSel && !topicSel.disabled){
+			// ensure exact casing from VIDEO_SECTIONS is used for display sync
+			const match = VIDEO_SECTIONS[filterDay] ? VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); }) : null;
+			if(match){
+				filterTopic = match;
+				topicSel.value = match;
+			}
+		}
+		daySel.addEventListener('change', function(){
+			filterDay = daySel.value || '';
+			// reset topic if not in new day's list
+			if(filterDay && filterTopic){
+				const ok = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
+				if(!ok) filterTopic = '';
+			}
+			if(!filterDay) filterTopic = '';
+			populateFilterTopic();
+			persistFilter();
+			applyFilterAndRender();
+		});
+		topicSel.addEventListener('change', function(){
+			filterTopic = topicSel.value || '';
+			persistFilter();
+			applyFilterAndRender();
+		});
+		// initial sync to query if restored from storage but query empty
+		persistFilter();
+	}
+	// expose for testing
+	try{ if(typeof window !== 'undefined'){ window.VIDEO_SECTIONS = VIDEO_SECTIONS; window.getFilteredVideos = getFilteredVideos; } }catch(e){}
 
 	/* ---- hardened watermark helpers ---- */
 	function escapeHtml(s){
@@ -32,7 +165,7 @@ async function loadVideos(){
 		wrap.className = 'video-watermark-tiled';
 		wrap.setAttribute('aria-hidden','true');
 		wrap.style.pointerEvents = 'none';
-		for(let i=0;i<9;i++){
+		for(let i=0;i<5;i++){
 			const span = document.createElement('span');
 			span.className = 'video-watermark__tile';
 			span.textContent = 'drafted.world | @' + clean;
@@ -50,7 +183,7 @@ async function loadVideos(){
 		const canvas = document.createElement('canvas');
 		canvas.className = 'video-watermark-canvas';
 		canvas.setAttribute('aria-hidden','true');
-		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.92;z-index:2;';
+		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.09;z-index:2;';
 		let ro = null;
 		let rafId = 0;
 		function draw(){
@@ -63,20 +196,26 @@ async function loadVideos(){
 			ctx.save();
 			ctx.scale(dpr, dpr);
 			ctx.font = '700 11px system-ui, -apple-system, sans-serif';
-			ctx.fillStyle = 'rgba(255,255,255,0.92)';
+			ctx.fillStyle = 'rgba(255,255,255,0.55)';
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
-			const cols = 3, rows = 3;
-			for(let r=0;r<rows;r++){
-				for(let c=0;c<cols;c++){
-					const x = (rect.width/cols)*(c+0.5);
-					const y = (rect.height/rows)*(r+0.5);
+			// 5 tiles: center + 4 corners (faint)
+			const positions = [
+				[rect.width*0.5, rect.height*0.5],
+				[rect.width*0.22, rect.height*0.22],
+				[rect.width*0.78, rect.height*0.22],
+				[rect.width*0.22, rect.height*0.78],
+				[rect.width*0.78, rect.height*0.78]
+			];
+			for(let i=0;i<positions.length;i++){
+					const x = positions[i][0];
+					const y = positions[i][1];
 					ctx.save();
 					ctx.translate(x, y);
 					const rot = (Math.random()*6 - 3) * Math.PI / 180;
 					ctx.rotate(rot);
-					ctx.shadowColor = 'rgba(0,0,0,0.85)';
-					ctx.shadowBlur = 4;
+					ctx.shadowColor = 'rgba(0,0,0,0.7)';
+					ctx.shadowBlur = 2;
 					ctx.shadowOffsetY = 1;
 					ctx.fillText(text, 0, 0);
 					ctx.restore();
@@ -153,7 +292,7 @@ async function loadVideos(){
 				if(comp2 && (comp2.display === 'none' || parseFloat(comp2.opacity) === 0)){
 					if(el.classList.contains('video-watermark-tiled')) el.style.display = 'grid';
 					else el.style.display = 'block';
-					el.style.opacity = '0.92';
+					el.style.opacity = wrapper && wrapper.getAttribute('data-watermark') === 'burned' ? '0.03' : '0.09';
 				}
 				restoring = false;
 			}
@@ -487,6 +626,7 @@ async function loadVideos(){
 	}
 
 	initVideoViewToggle();
+	initFilters();
 
 	function updateCount(n){
 		if(!countEl) return;
@@ -507,15 +647,34 @@ async function loadVideos(){
 			updateCount(0);
 			return;
 		}
+		filteredVideos = getFilteredVideos();
+		if(!filteredVideos.length){
+			list.replaceChildren();
+			const empty = document.createElement('div');
+			empty.className = 'empty-list';
+			const dayLabel = filterDay ? filterDay : 'All Days';
+			const topicLabel = filterTopic ? filterTopic : '';
+			let titleText = 'No videos for ' + dayLabel;
+			if(topicLabel) titleText += ' \u2013 ' + topicLabel;
+			else if(filterDay) titleText += ' \u2013 All Topics';
+			// escape for innerHTML
+			const safeTitle = escapeHtml(titleText);
+			const hint = (filterDay || filterTopic) ? 'Try a different Day or Topic filter.' : 'Videos will appear here once published.';
+			empty.innerHTML = '<div class="empty-list-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="20" height="20" aria-hidden="true"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg></div><p class="empty-list-title">' + safeTitle + '</p><p class="empty-list-hint">' + escapeHtml(hint) + '</p>';
+			list.appendChild(empty);
+			status.textContent = titleText + '.';
+			updateCount(0);
+			return;
+		}
 		status.textContent = '';
-		updateCount(loadedVideos.length);
+		updateCount(filteredVideos.length);
 		const articles = [];
 		const useCanvasLayer = (function(){
 			try{ return new URLSearchParams(location.search).has('canvas'); }catch(e){ return false; }
 		})();
 		// viewer fallback: if any video lacks viewer, prefetch whoami once
 		let cachedWhoamiViewer = null;
-		const needsWhoami = loadedVideos.some(function(v){ return !v.viewer || !String(v.viewer).trim(); });
+		const needsWhoami = filteredVideos.some(function(v){ return !v.viewer || !String(v.viewer).trim(); });
 		if(needsWhoami){
 			try{
 				const whoRes = await fetch(apiBase + '/api/whoami', {credentials:'include', cache:'no-store'});
@@ -531,7 +690,7 @@ async function loadVideos(){
 				}
 			}catch(e){}
 		}
-		loadedVideos.forEach(function(video){
+		filteredVideos.forEach(function(video){
 			let viewerName = video.viewer || cachedWhoamiViewer || '';
 			console.log('[watermark] viewer', viewerName, 'video', video.id);
 			if(!viewerName || !String(viewerName).trim()){
@@ -683,10 +842,13 @@ async function loadVideos(){
 				console.error('video load error', video.id, err || 'unknown');
 			});
 
-			const watermark = createWatermark(viewerName);
+			// single faint layer: EITHER DOM or canvas, never both; prevent duplicate appends
+			let watermark = null;
 			let canvasLayer = null;
 			if(useCanvasLayer){
 				try{ canvasLayer = createCanvasWatermark(viewerName, stage); }catch(e){}
+			}else{
+				watermark = createWatermark(viewerName);
 			}
 
 			const bigPlayBtn = document.createElement('div');
@@ -697,13 +859,19 @@ async function loadVideos(){
 
 			stage.appendChild(player);
 			stage.appendChild(bigPlayBtn);
-			stage.appendChild(watermark);
+			// remove any existing watermark artifacts before append
+			try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
 			if(canvasLayer) stage.appendChild(canvasLayer);
+			else if(watermark) stage.appendChild(watermark);
 			wrapper.appendChild(stage);
+			if(wrapper.getAttribute('data-watermark')==='burned'){
+				try{ if(watermark) watermark.style.opacity='0.03'; }catch(e){}
+				try{ if(canvasLayer) canvasLayer.style.opacity='0.03'; }catch(e){}
+			}
 
 			// harden + jitter (keep until player removed)
-			const unharden = hardenWatermark(wrapper, watermark);
-			const stopJitter = jitterWatermark(watermark, player);
+			const unharden = watermark ? hardenWatermark(wrapper, watermark) : function(){};
+			const stopJitter = watermark ? jitterWatermark(watermark, player) : function(){};
 			let unhardenCanvas = null;
 			if(canvasLayer) unhardenCanvas = hardenWatermark(wrapper, canvasLayer);
 

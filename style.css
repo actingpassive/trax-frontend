@@ -181,6 +181,12 @@ body::before{
 .view-toggle__btn svg{width:16px;height:16px}
 .content-page h2{font-size:clamp(3rem,7vw,6rem);line-height:1;margin:42px 0 20px}
 .videos-header h2{margin:0;font-size:clamp(3rem,7vw,6rem)}
+.video-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0 12px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.video-filters select{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:8px;font:inherit;min-width:160px;cursor:pointer;transition:border-color .15s,background .15s}
+.video-filters select:focus{outline:2px solid var(--accent);outline-offset:2px;border-color:var(--accent)}
+.video-filters select:disabled{opacity:.55;cursor:not-allowed}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:560px){.video-filters{flex-direction:column;align-items:stretch} .video-filters select{width:100%}}
 .info-block{border-top:1px solid var(--line);padding:22px 0}
 .info-block h3{margin:0 0 8px;font-family:Georgia,serif;font-size:1.5rem;font-weight:400}
 .info-block p{color:var(--muted);line-height:1.7;margin:0;max-width:620px}
@@ -207,7 +213,9 @@ body::before{
   display:flex;
   flex-direction:column;
   gap:18px;
+  min-width:0;
 }
+/* legacy .section — kept for non-video pages; video cards use .video-section below with isolated card model */
 .section{
   display:flex;
   gap:18px;
@@ -257,11 +265,11 @@ body::before{
   position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;pointer-events:none;user-select:none;mix-blend-mode:normal;
 }
 .video-watermark__tile{
-  color:rgba(255,255,255,.92);font:700 .68rem/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.08em;text-transform:lowercase;text-shadow:0 1px 4px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.6);opacity:.92;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));white-space:nowrap;animation:wm-drift 4.2s ease-in-out infinite alternate;will-change:transform;
+  color:rgba(255,255,255,.55);font:700 .68rem/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.08em;text-transform:lowercase;text-shadow:0 1px 2px rgba(0,0,0,.7);opacity:.09;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));white-space:nowrap;animation:wm-drift 4.2s ease-in-out infinite alternate;will-change:transform;
 }
 @keyframes wm-drift{from{transform:rotate(var(--r,0deg)) translate(-8px,-6px) translate(var(--dx,0),var(--dy,0))} to{transform:rotate(var(--r,0deg)) translate(8px,6px) translate(var(--dx,0),var(--dy,0))}}
 .video-watermark-canvas{
-  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.92;z-index:2;
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.09;z-index:2;
 }
 /* thumbnail watermark — shows same drafted.world | @viewer as video but scaled down */
 .thumb-watermark{
@@ -472,17 +480,90 @@ body::before{
   border-radius:10px;
 }
 .icon-btn--primary:hover{background:#6a4aa6;border-color:#6a4aa6}
-.video-section{display:flex;flex-direction:column;align-items:stretch;background:var(--surface);border:1px solid var(--line);padding:24px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);margin-bottom:24px;min-width:0}
-.video-section h3{margin:0 0 16px;font-family:Georgia,serif;font-size:1.8rem;font-weight:400;color:var(--ink)}
+.video-section{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+  background:var(--surface);
+  border:1px solid var(--line);
+  padding:0;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 8px 30px rgba(0,0,0,0.2);
+  min-width:0;
+  margin-bottom:0;
+}
+.video-section h3{
+  margin:0;
+  font-family:Georgia,serif;
+  font-size:clamp(1.2rem, 4vw, 1.6rem);
+  font-weight:400;
+  color:var(--ink);
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+/* header injected by videos.js via inline style="display:flex..." — override to 16px card header */
+.video-section > div[style*="display:flex"]{
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  padding:16px !important;
+  margin:0 !important;
+  min-width:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.video-section > div[style*="display:flex"] > div:first-child{
+  width:80px !important;
+  height:45px !important;
+  flex-shrink:0 !important;
+  border-radius:4px !important;
+}
+.video-section > div[style*="display:flex"] > div:nth-child(2){
+  flex:1 !important;
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:2px !important;
+}
+.video-section > div[style*="display:flex"] h3{
+  font-size:clamp(1.2rem, 4vw, 1.6rem) !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+/* named-class fallback if JS later adds .titleRow/.thumbWrap */
+.video-section .titleRow{padding:16px;display:flex;align-items:center;gap:12px;min-width:0;border-bottom:1px solid var(--line)}
+.video-section .thumbWrap{width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden}
+.video-section .textWrap{flex:1;min-width:0}
+.video-section .title{font-size:clamp(1.2rem, 4vw, 1.6rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.video-section .custom-player-wrapper{
+  width:100%;
+  border-radius:0;
+  border-left:0;
+  border-right:0;
+  border-bottom:0;
+  border-top:0;
+}
+/* watermark must not affect flex sizing — absolute overlay only */
+.video-watermark-tiled,
+.video-watermark-canvas{
+  position:absolute !important;
+  inset:0 !important;
+  pointer-events:none !important;
+}
 .section.alt{flex-direction:row-reverse}
 .card{padding:14px;border-radius:6px;background:var(--surface);color:var(--muted)}
 
-/* gallery grid – list vs grid toggle (copied from admin, adapted for .video-section) */
+/* gallery grid – list vs grid toggle */
 .video-list--grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:12px;
-  padding:12px;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+  padding:0;
   max-height:none;
   background:transparent;
   border:0;
@@ -492,20 +573,26 @@ body::before{
   align-items:stretch;
   padding:0;
   border:1px solid var(--line);
-  border-radius:10px;
+  border-radius:12px;
   overflow:hidden;
   background:var(--surface);
   gap:0;
   margin-bottom:0;
 }
-.video-list--grid .video-section h3{
-  padding:12px 12px 6px;
-  font-size:1.2rem;
-  white-space:normal;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
+.video-list--grid .video-section > div[style*="display:flex"]{
+  padding:12px !important;
+}
+.video-list--grid .video-section h3,
+.video-list--grid .video-section > div[style*="display:flex"] h3{
+  padding:0 !important;
+  font-size:1.1rem !important;
+  white-space:normal !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  line-height:1.25;
 }
 .video-list--grid .video-section .custom-player-wrapper{
   border-radius:0;
@@ -516,9 +603,6 @@ body::before{
 }
 .video-list--grid .video-section .video-player{max-height:none}
 .video-list--grid .empty-list{grid-column:1/-1}
-@media (max-width:768px){
-  .video-list--grid .video-section{padding:0}
-}
 
 /* fullscreen hover controls – match admin gradient */
 .custom-player-wrapper:fullscreen .video-player-controls{
@@ -581,6 +665,9 @@ body::before{
 .custom-player-wrapper:-webkit-full-screen .video-watermark{bottom:72px}
 .custom-player-wrapper:fullscreen .video-watermark-tiled{bottom:auto}
 .custom-player-wrapper:-webkit-full-screen .video-watermark-tiled{bottom:auto}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-tiled,
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:0.03 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:0.03 !important;}
 @media(max-width:480px){
   .video-watermark-tiled{grid-template-columns:1fr 1fr}
   .video-watermark__tile:nth-child(n+6){display:none}
@@ -785,14 +872,50 @@ body::before{
   .videos-header{flex-direction:row;align-items:center;justify-content:space-between}
 }
 
+@media (min-width:1024px){
+  .video-list--grid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:768px){
+  .video-list--grid{grid-template-columns:repeat(2,1fr)}
+}
 @media (max-width:560px){
   .grade-card{grid-template-columns:1fr}
   .grade-card .grade-tier{width:72px;height:72px;font-size:1.7rem}
+  .video-list--grid{grid-template-columns:1fr}
+  .video-section > div[style*="display:flex"]{padding:12px !important}
+  .video-section > div[style*="display:flex"] h3,
+  .video-section h3{
+    font-size:1.1rem !important;
+    white-space:normal !important;
+    display:-webkit-box !important;
+    -webkit-line-clamp:2 !important;
+    -webkit-box-orient:vertical !important;
+    overflow:hidden !important;
+  }
+  .video-section .titleRow{padding:12px}
+  .video-section .title{
+    font-size:1.1rem;
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
 }
 
 @media (max-width:480px){
   .page-links{grid-template-columns:1fr}
   .homework-images{grid-template-columns:1fr}
+  .video-section > div[style*="display:flex"]{padding:12px !important}
+  .video-section > div[style*="display:flex"] h3,
+  .video-section h3{font-size:1.1rem !important}
+  .video-list--grid{grid-template-columns:1fr}
+  .custom-player-wrapper{border-radius:0}
+  .video-player-controls{padding:8px 10px}
+  .video-section{border-radius:12px}
+  .videos-header h2{font-size:clamp(2.2rem, 8vw, 3rem)}
+  .container{padding:0}
+  body{padding:20px 4vw}
 }
 
 .user-avatar {
