@@ -179,15 +179,15 @@ async function loadVideos(){
 				+ '</div>'
 				+ '<div class="video-player-bar">'
 				+ '<div class="video-player-bar__left">'
-				+ '<button class="icon-btn icon-btn--primary video-player-play" type="button" aria-label="Play"><svg class="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/><path d="M8 5v14l11-7z"/></svg></button>'
+				+ '<button class="icon-btn icon-btn--primary video-player-play" type="button" aria-label="Play"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>'
 				+ '<span class="video-player-time video-player-time--current">00:00</span>'
 				+ '<span class="video-player-time" style="display:none" aria-hidden="true">00:00 / 00:00</span>'
 				+ '</div>'
 				+ '<div class="video-player-bar__right">'
 				+ '<span class="video-player-time video-player-time--duration">00:00</span>'
-				+ '<button class="icon-btn video-player-mute" type="button" aria-label="Mute"><svg class="icon-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19 6a9 9 0 010 12"/></svg></button>'
+				+ '<button class="icon-btn video-player-mute" type="button" aria-label="Mute"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19 6a9 9 0 010 12"/></svg></button>'
 				+ '<input class="video-player-volume" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume" />'
-				+ '<button class="icon-btn video-player-fullscreen" type="button" aria-label="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/></svg></button>'
+				+ '<button class="icon-btn video-player-fullscreen" type="button" aria-label="Fullscreen"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/></svg></button>'
 				+ '</div>'
 				+ '</div>';
 			wrapper.appendChild(controls);
@@ -248,10 +248,10 @@ async function loadVideos(){
 				function updatePlayIcon(isPlaying){
 					if(!playBtn) return;
 					if(isPlaying){
-						playBtn.innerHTML = '<svg class="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="7" y="5" width="4" height="14" rx="1"/><rect x="13" y="5" width="4" height="14" rx="1"/></svg>';
+						playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="5" width="4" height="14" rx="1"/><rect x="13" y="5" width="4" height="14" rx="1"/></svg>';
 						playBtn.setAttribute('aria-label','Pause');
 					}else{
-						playBtn.innerHTML = '<svg class="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/><path d="M8 5v14l11-7z"/></svg>';
+						playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 						playBtn.setAttribute('aria-label','Play');
 					}
 				}
@@ -259,12 +259,12 @@ async function loadVideos(){
 					if(!muteBtn) return;
 					const muted = player.muted || player.volume === 0;
 					if(muted){
-						muteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/><path d="M16 9l6 6M22 9l-6 6"/></svg>';
+						muteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/><path d="M16 9l6 6M22 9l-6 6"/></svg>';
 						muteBtn.setAttribute('aria-label','Unmute');
 					}else{
 						const v = player.volume;
 						const path2 = v < 0.5 ? '<path d="M15.54 8.46a5 5 0 010 7.07"/>' : '<path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19 6a9 9 0 010 12"/>';
-						muteBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/>' + path2 + '</svg>';
+						muteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/>' + path2 + '</svg>';
 						muteBtn.setAttribute('aria-label','Mute');
 					}
 				}
@@ -279,10 +279,10 @@ async function loadVideos(){
 					if(!fullscreenBtn) return;
 					const isFs = document.fullscreenElement === wrapper || document.webkitFullscreenElement === wrapper;
 					if(isFs){
-						fullscreenBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 9L5 5M5 5h4M5 5v4M15 9l4-4M19 5h-4M19 5v4M9 15l-4 4M5 19h4M5 19v-4M15 15l4 4M19 19h-4M19 19v-4"/></svg>';
+						fullscreenBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M9 9L5 5M5 5h4M5 5v4M15 9l4-4M19 5h-4M19 5v4M9 15l-4 4M5 19h4M5 19v-4M15 15l4 4M19 19h-4M19 19v-4"/></svg>';
 						fullscreenBtn.setAttribute('aria-label','Exit fullscreen');
 					}else{
-						fullscreenBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/></svg>';
+						fullscreenBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/></svg>';
 						fullscreenBtn.setAttribute('aria-label','Fullscreen');
 					}
 				}
