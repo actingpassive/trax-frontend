@@ -253,7 +253,7 @@ async function loadVideos(){
 		let attempt = 0;
 		const startMs = Date.now();
 		const MAX_MS = 90000;
-		const ALLOW_GENERIC_FALLBACK = false; // hardest: do not auto-play generic while queued
+		const ALLOW_GENERIC_FALLBACK = true; // matches backend hotfix: generic MP4 is always served while personalized burn queues
 		function ensureNotice(queueLabel){
 			if(notice && notice.isConnected) return notice;
 			notice = document.createElement('div');
@@ -262,16 +262,12 @@ async function loadVideos(){
 			notice.setAttribute('aria-live','polite');
 			const clean = sanitizeViewer(viewer);
 			notice.innerHTML = ''
-				+ '<div class="personalizing-notice__badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Personalizing your copy</div>'
+				+ '<div class="personalizing-notice__badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Upgrading to forensic copy in background</div>'
 				+ '<div class="personalizing-notice__sub">drafted.world | @' + clean.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span class="personalizing-notice__queue">' + (queueLabel||'~45s') + '</span></div>'
 				+ '<div class="personalizing-notice__bar" aria-hidden="true"><div class="personalizing-notice__fill" style="width:8%"></div></div>'
 				+ '<div class="personalizing-notice__countdown">~45s</div>';
 			stage.appendChild(notice);
-			// deter playback of generic while queued if fallback disabled
-			if(!ALLOW_GENERIC_FALLBACK){
-				try{ player.pause(); }catch(e){}
-				// show big play as disabled state? keep watermark visible (already hardened)
-			}
+			// non-blocking info only — never pause playback; generic plays with tiled watermark
 			return notice;
 		}
 		function updateNoticeProgress(queueLabel){
@@ -329,19 +325,28 @@ async function loadVideos(){
 				if(res.ok){
 					let data = null;
 					try{ data = await res.json(); }catch(e){}
-					// HIT path: backend ready with burned segments
-					// Personalized MP4 url variants:
+					const isHit = cacheHeader === 'HIT' || watermarkHeader === 'burned' || (data && Array.isArray(data.segments) && data.segments.length>0);
+					// Graceful: only swap to burned when HIT is confirmed. A 200 without HIT
+					// (e.g. headers missing) is treated as pending — keep generic playing.
+					if(!isHit){
+						// Still pending — update non-blocking notice but DO NOT change src
+						const label = '~' + Math.max(5, Math.ceil((MAX_MS - (Date.now()-startMs))/1000)) + 's';
+						ensureNotice(label);
+						updateNoticeProgress(label);
+						if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader);
+						if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader);
+						const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
+						pollTimer = setTimeout(poll, delay);
+						return;
+					}
+					// HIT confirmed — prepare personalized URL
 					let personalizedUrl = null;
 					if(data && data.personalizedUrl) personalizedUrl = String(data.personalizedUrl);
 					else if(data && data.url) personalizedUrl = String(data.url);
 					else if(video.personalizedUrl) personalizedUrl = String(video.personalizedUrl);
 					else {
-						// construct MP4 personalized URL with flag
 						personalizedUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + '&personalized=1';
 					}
-					// if header HIT or segments present, swap source
-					const isHit = cacheHeader === 'HIT' || watermarkHeader === 'burned' || (data && Array.isArray(data.segments) && data.segments.length>0);
-					// graceful swap even if not HIT but 200 (backend may not set header yet)
 					if(notice && notice.isConnected){
 						const fill = notice.querySelector('.personalizing-notice__fill');
 						if(fill) fill.style.width = '100%';
@@ -349,20 +354,14 @@ async function loadVideos(){
 					}
 					if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
 					if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
-					// also if isHit false but data ok, still remove notice
-					else if(notice && notice.isConnected) setTimeout(function(){ try{ notice.remove(); }catch(e){} }, 400);
-					// Swap player src if we have a personalizedUrl and it's not already generic (avoid loop if backend returns same signed url)
 					let finalSrc = personalizedUrl;
 					if(finalSrc && finalSrc.startsWith('/') && apiBase) finalSrc = apiBase + finalSrc;
-					// If backend already burned into same /media/:id URL, no need to change; but we still ensure headers applied
-					// Only swap if finalSrc differs from current and either isHit or personalizedUrl contains personalized flag or differs
 					const curSrc = player.src || '';
-					// Normalize for comparison: strip apiBase prefix
 					function stripBase(s){ try{ const u=new URL(s, location.origin); return u.pathname+u.search; }catch(e){ return s; } }
 					const curStripped = stripBase(curSrc);
 					const newStripped = stripBase(finalSrc);
-					if(finalSrc && curStripped !== newStripped){
-						// preserve paused state; don't auto-play per hardening
+					// Only swap when HIT and finalSrc differs — preserve currentTime
+					if(finalSrc && isHit && curStripped !== newStripped){
 						const wasPlaying = !player.paused && !player.ended;
 						const curTime = player.currentTime || 0;
 						try{
@@ -372,7 +371,6 @@ async function loadVideos(){
 							if(wasPlaying){ player.play().catch(function(){}); }
 						}catch(e){}
 					} else {
-						// same URL but was 202 previously, ensure poster reload not needed; just remove overlay
 						if(notice && notice.isConnected) try{ notice.remove(); }catch(e){}
 					}
 					return;
@@ -541,19 +539,68 @@ async function loadVideos(){
 			if(video.thumbnail) player.poster = '' + apiBase + video.thumbnail;
 			// Prefer personalizedUrl when backend already burns; fallback to generic signed url
 			(function setInitialSrc(){
-				let src = video.personalizedUrl || video.url || '';
+				// Always start from generic MP4 (video.url). Never use manifest URL or
+				// append &personalized=1 on first paint — generic plays immediately
+				// with tiled watermark drafted.world | @viewer while burn queues.
+				let src = video.url || '';
 				if(src){
 					const hasBase = String(src).startsWith('http') || String(src).startsWith('/');
 					if(hasBase && String(src).startsWith('/')) src = '' + apiBase + src;
 					else if(!hasBase) src = '' + apiBase + '/' + String(src).replace(/^\//,'');
-					// append personalized flag if we know burn is enabled? keep generic for now
+					// guard: never treat manifest as video src
+					if(String(src).includes('/manifest')) {
+						console.warn('[video] setInitialSrc: manifest URL filtered, using generic', video.id);
+						src = video.url || src;
+					}
 					player.src = String(src);
 				}
 			})();
 			try{ player.load(); }catch(e){}
 			player.addEventListener('contextmenu', function(e){ e.preventDefault(); });
-			player.addEventListener('error', function(e){
-				console.error('video load error', video.id, e);
+			player.addEventListener('error', function(){
+				const err = player.error;
+				const code = err ? err.code : 0;
+				// MEDIA_ERR_SRC_NOT_SUPPORTED (4) — backend returned 202 JSON or non-video
+				if(code === 4){
+					const cur = player.src || '';
+					console.warn('[video] MEDIA_ERR_SRC_NOT_SUPPORTED — likely 202 JSON', video.id, cur, err);
+					// Never allow manifest URL as src
+					if(cur.includes('/manifest')){
+						let fallback = video.url || '';
+						if(fallback){
+							if(String(fallback).startsWith('/')) fallback = apiBase + fallback;
+							const curNorm = cur;
+							if(fallback !== curNorm){
+								try{ player.src = String(fallback); player.load(); }catch(ex){}
+							}
+						}
+						return;
+					}
+					// Personalized URL failed before HIT — fall back to generic so playback resumes
+					if(cur.includes('personalized=1')){
+						let fallback = video.url || '';
+						if(fallback){
+							if(String(fallback).startsWith('/')) fallback = apiBase + fallback;
+							if(fallback !== cur){
+								console.warn('[video] personalized src failed, falling back to generic', fallback);
+								try{ player.src = String(fallback); player.load(); }catch(ex){}
+							}
+						}
+						return;
+					}
+					// Generic also hit 202 JSON (should not happen with ALLOW_GENERIC_FALLBACK=true)
+					// Verify via lightweight HEAD — but never swap src away from generic here
+					try{
+						fetch(cur, {method:'HEAD', credentials:'include', cache:'no-store'}).then(function(r){
+							if(r.status === 202) console.warn('[video] HEAD confirms 202 for', cur);
+							const ct = (r.headers.get('content-type')||'').toLowerCase();
+							if(ct.includes('application/json')) console.warn('[video] HEAD content-type is JSON for video src', cur);
+						}).catch(function(){});
+					}catch(ex){}
+					// Keep generic playing with tiled watermark; manifest poll will upgrade when HIT
+					return;
+				}
+				console.error('video load error', video.id, err || 'unknown');
 			});
 
 			const viewerName = video.viewer || '';
@@ -698,14 +745,8 @@ async function loadVideos(){
 					}
 				}
 
-				// toggle play
+				// toggle play — always allowed; notice is non-blocking info when ALLOW_GENERIC_FALLBACK=true
 				function togglePlay(){
-					// if personalizing notice is showing and generic fallback disabled, don't play generic
-					const notice = stage.querySelector('.personalizing-notice');
-					if(notice && notice.isConnected){
-						// allow click to retry but not play
-						return;
-					}
 					if(player.paused) player.play().catch(function(){});
 					else player.pause();
 				}
