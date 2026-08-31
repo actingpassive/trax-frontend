@@ -15,12 +15,28 @@ async function loadVideos(){
 		if(h > 0) return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 		return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 	}
+	function formatCardDate(iso){
+		if(!iso) return '';
+		try{
+			const d = new Date(iso);
+			if(isNaN(d)) return '';
+			const dd = String(d.getDate()).padStart(2,'0');
+			const mm = String(d.getMonth()+1).padStart(2,'0');
+			const yy = d.getFullYear();
+			let h = d.getHours();
+			const min = String(d.getMinutes()).padStart(2,'0');
+			const ampm = h >= 12 ? 'pm' : 'am';
+			h = h % 12; if(h===0) h=12;
+			const hh = String(h).padStart(2,'0');
+			return dd + '/' + mm + '/' + yy + ' ' + hh + ':' + min + ' ' + ampm;
+		}catch(e){ return ''; }
+	}
 
 	function initVideoViewToggle(){
 		const listEl = document.getElementById('video-list');
 		const btns = document.querySelectorAll('.view-toggle__btn');
 		if(!listEl || !btns.length) return;
-		const KEY = 'trax-video-view';
+		const KEY = 'drafted-video-view-v2';
 		function apply(mode){
 			const m = mode === 'grid' ? 'grid' : 'list';
 			if(m === 'grid') listEl.classList.add('video-list--grid');
@@ -52,6 +68,7 @@ async function loadVideos(){
 
 	function updateCount(n){
 		if(!countEl) return;
+		if(n === null || n === undefined || n === '—'){ countEl.textContent = '—'; return; }
 		if(n === 0) countEl.textContent = '0 videos';
 		else if(n === 1) countEl.textContent = '1 video';
 		else countEl.textContent = n + ' videos';
@@ -79,20 +96,36 @@ async function loadVideos(){
 
 			const titleRow = document.createElement('div');
 			titleRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin:0 0 16px;';
+			const thumbWrap = document.createElement('div');
+			thumbWrap.style.cssText = 'width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#16161b;border:1px solid #1f1f25;display:flex;align-items:center;justify-content:center;';
 			if(video.thumbnail){
 				const thumb = document.createElement('img');
 				thumb.src = '' + apiBase + video.thumbnail;
 				thumb.alt = '';
 				thumb.loading = 'lazy';
-				thumb.style.cssText = 'width:80px;height:45px;object-fit:cover;background:#16161b;border:1px solid #1f1f25;border-radius:4px;flex-shrink:0;';
-				thumb.onerror = function(){ thumb.style.display='none'; };
-				titleRow.appendChild(thumb);
+				thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+				thumb.onerror = function(){ thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>'; };
+				thumbWrap.appendChild(thumb);
+			}else{
+				thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>';
 			}
+			titleRow.appendChild(thumbWrap);
+			const textWrap = document.createElement('div');
+			textWrap.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;';
 			const title = document.createElement('h3');
 			const titleText = video.topic ? ((video.day ? video.day + ' – ' : '') + (video.topic || video.name)) : (video.name || 'Untitled');
 			title.textContent = titleText;
-			title.style.cssText = 'margin:0;font-family:Georgia,serif;font-size:1.4rem;';
-			titleRow.appendChild(title);
+			title.style.cssText = 'margin:0;font-family:Georgia,serif;font-size:1.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+			title.title = titleText;
+			textWrap.appendChild(title);
+			const dateText = formatCardDate(video.createdAt);
+			if(dateText){
+				const dateEl = document.createElement('div');
+				dateEl.textContent = dateText;
+				dateEl.style.cssText = 'font-size:0.82rem;color:var(--muted);';
+				textWrap.appendChild(dateEl);
+			}
+			titleRow.appendChild(textWrap);
 
 			const wrapper = document.createElement('div');
 			wrapper.className = 'custom-player-wrapper';
@@ -470,17 +503,19 @@ async function loadVideos(){
 		if(!auth.user){
 			status.textContent = 'Sign in with Discord to view the video library.';
 			if(login) login.hidden = false;
-			updateCount(0);
+			updateCount('—');
 			return;
 		}
 		const response = await fetch(apiBase + '/api/videos', {credentials:'include'});
 		if(response.status === 403){
 			status.textContent = 'Your Discord account does not have library access yet.';
-			updateCount(0);
+			updateCount('—');
 			return;
 		}
 		if(!response.ok) throw new Error('video request failed');
 		loadedVideos = await response.json();
+		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
+		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
 		renderVideos();
 		document.addEventListener('visibilitychange', function(){
 			if(document.hidden) list.querySelectorAll('video').forEach(function(p){ p.pause(); });
