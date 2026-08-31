@@ -39,7 +39,7 @@ async function loadVideos(){
 		const canvas = document.createElement('canvas');
 		canvas.className = 'video-watermark-canvas';
 		canvas.setAttribute('aria-hidden','true');
-		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:overlay;opacity:.55;z-index:2;';
+		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.92;z-index:2;';
 		let ro = null;
 		let rafId = 0;
 		function draw(){
@@ -51,8 +51,8 @@ async function loadVideos(){
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 			ctx.save();
 			ctx.scale(dpr, dpr);
-			ctx.font = '600 11px system-ui, -apple-system, sans-serif';
-			ctx.fillStyle = 'rgba(255,255,255,0.55)';
+			ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+			ctx.fillStyle = 'rgba(255,255,255,0.92)';
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 			const cols = 3, rows = 3;
@@ -142,7 +142,7 @@ async function loadVideos(){
 				if(comp2 && (comp2.display === 'none' || parseFloat(comp2.opacity) === 0)){
 					if(el.classList.contains('video-watermark-tiled')) el.style.display = 'grid';
 					else el.style.display = 'block';
-					el.style.opacity = '0.55';
+					el.style.opacity = '0.92';
 				}
 				restoring = false;
 			}
@@ -465,7 +465,7 @@ async function loadVideos(){
 		else countEl.textContent = n + ' videos';
 	}
 
-	function renderVideos(){
+	async function renderVideos(){
 		if(!loadedVideos.length){
 			list.replaceChildren();
 			const empty = document.createElement('div');
@@ -482,7 +482,47 @@ async function loadVideos(){
 		const useCanvasLayer = (function(){
 			try{ return new URLSearchParams(location.search).has('canvas'); }catch(e){ return false; }
 		})();
+		// viewer fallback: if any video lacks viewer, prefetch whoami once
+		let cachedWhoamiViewer = null;
+		const needsWhoami = loadedVideos.some(function(v){ return !v.viewer || !String(v.viewer).trim(); });
+		if(needsWhoami){
+			try{
+				const whoRes = await fetch(apiBase + '/api/whoami', {credentials:'include', cache:'no-store'});
+				if(whoRes.ok){
+					const whoData = await whoRes.json();
+					const u = whoData && whoData.user;
+					let v = '';
+					if(u){
+						v = u.displayName || u.username || u.discordName || u.discord || u.name || u.viewer || '';
+					}
+					if(!v) v = whoData.viewer || whoData.displayName || whoData.username || whoData.name || '';
+					if(v) cachedWhoamiViewer = String(v).trim().slice(0,32);
+				}
+			}catch(e){}
+		}
 		loadedVideos.forEach(function(video){
+			let viewerName = video.viewer || cachedWhoamiViewer || '';
+			console.log('[watermark] viewer', viewerName, 'video', video.id);
+			if(!viewerName || !String(viewerName).trim()){
+				if(cachedWhoamiViewer) viewerName = cachedWhoamiViewer;
+			}
+			// fallback async refetch if still empty (e.g. race) — fire and update in place
+			if((!viewerName || !String(viewerName).trim()) && !cachedWhoamiViewer){
+				fetch(apiBase + '/api/whoami', {credentials:'include', cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+					if(!d) return;
+					const u2 = d.user || d;
+					let v2 = (u2 && (u2.displayName || u2.username || u2.discordName || u2.discord || u2.name || u2.viewer)) || d.viewer || d.displayName || '';
+					if(v2){
+						const clean2 = sanitizeViewer(v2);
+						// update watermark tiles already in DOM if any
+						try{
+							const tiles = document.querySelectorAll('.video-watermark__tile');
+							// last resort: patch current video's watermark if still generic
+							if(!String(viewerName).trim()) viewerName = clean2;
+						}catch(e){}
+					}
+				}).catch(function(){});
+			}
 			const section = document.createElement('article');
 			section.className = 'section video-section';
 			section.dataset.day = video.day || '';
@@ -505,7 +545,7 @@ async function loadVideos(){
 				const thumbWm = document.createElement('div');
 				thumbWm.className = 'thumb-watermark';
 				thumbWm.setAttribute('aria-hidden','true');
-				thumbWm.textContent = 'drafted.world | @' + sanitizeViewer(video.viewer || '');
+				thumbWm.textContent = 'drafted.world | @' + sanitizeViewer(viewerName);
 				thumbWrap.appendChild(thumbWm);
 			}else{
 				thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>';
@@ -612,7 +652,6 @@ async function loadVideos(){
 				console.error('video load error', video.id, err || 'unknown');
 			});
 
-			const viewerName = video.viewer || '';
 			const watermark = createWatermark(viewerName);
 			let canvasLayer = null;
 			if(useCanvasLayer){
@@ -1003,7 +1042,7 @@ async function loadVideos(){
 		loadedVideos = await response.json();
 		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
 		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
-		renderVideos();
+		await renderVideos();
 		document.addEventListener('visibilitychange', function(){
 			if(document.hidden) list.querySelectorAll('video').forEach(function(p){ p.pause(); });
 		});
