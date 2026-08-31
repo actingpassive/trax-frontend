@@ -1,33 +1,38 @@
 const file = document.getElementById('ndaFile');
 const form = document.getElementById('nda-form');
 const status = document.getElementById('nda-status');
+const MAX_NDA_BYTES = 15 * 1024 * 1024;
+
+function isValidNdaFile(f){
+  if(!f) return {ok:false, reason:'No file selected.'};
+  if(f.size > MAX_NDA_BYTES) return {ok:false, reason:'File too large — max 15 MB.'};
+  const nameOk = /\.pdf$/i.test(f.name);
+  const typeOk = !f.type || f.type === 'application/pdf';
+  if(!nameOk || !typeOk) return {ok:false, reason:'Invalid type — PDF only (15 MB max).'};
+  return {ok:true};
+}
 
 file.addEventListener('change', () => {
   const f = file.files[0];
   document.getElementById('file-name').textContent = f?.name || 'Choose signed NDA';
   const statusEl = document.getElementById('nda-status');
-  if (f && f.size > 15 * 1024 * 1024) {
-    statusEl.textContent = 'File too large — max 15 MB.';
+  if(!f){ statusEl.textContent = ''; return; }
+  const v = isValidNdaFile(f);
+  if(!v.ok){
+    statusEl.textContent = v.reason;
     file.value = '';
     document.getElementById('file-name').textContent = 'Choose signed NDA';
     return;
   }
-  if (f && !/\.(pdf|doc|docx)$/i.test(f.name)) {
-    statusEl.textContent = 'Invalid type — PDF, DOC, or DOCX only.';
-    file.value = '';
-    document.getElementById('file-name').textContent = 'Choose signed NDA';
-    return;
-  }
-  if (f) statusEl.textContent = '';
+  statusEl.textContent = '';
 });
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
   const f = file.files[0];
-  if (f && f.size > 15 * 1024 * 1024) {
-    status.textContent = 'File too large — max 15 MB.';
-    return;
-  }
+  if(!f){ status.textContent = 'Please choose a PDF file.'; return; }
+  const v = isValidNdaFile(f);
+  if(!v.ok){ status.textContent = v.reason; return; }
   const btn = form.querySelector('button[type="submit"]');
   if (btn) btn.disabled = true;
   status.textContent = 'Submitting...';

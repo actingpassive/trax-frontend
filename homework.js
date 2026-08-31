@@ -53,18 +53,32 @@ async function check() {
 document.getElementById('homework-files').addEventListener('change', async e => {
   const input = e.target;
   if (!input.files.length) return;
-  // Client-side size gate: 10MB per file, 30MB total
-  const MAX_PER = 10 * 1024 * 1024;
-  const MAX_TOTAL = 30 * 1024 * 1024;
+  // Client-side validation: images only, 50 MB gate (task: 50MB homework images)
+  const MAX_PER = 50 * 1024 * 1024;
+  const MAX_TOTAL = 50 * 1024 * 1024;
+  const ALLOWED_EXT = /\.(png|jpe?g|webp|gif)$/i;
+  const ALLOWED_MIME = new Set(['image/png','image/jpeg','image/jpg','image/webp','image/gif']);
+  for (const f of input.files) {
+    if (!ALLOWED_EXT.test(f.name) || (f.type && !ALLOWED_MIME.has(f.type.toLowerCase()))) {
+      status.textContent = 'Invalid file type — images only: PNG, JPG, WEBP, GIF (50 MB max).';
+      input.value = '';
+      return;
+    }
+    if (f.size > MAX_PER) {
+      status.textContent = 'Each image must be \u226450 MB.';
+      input.value = '';
+      return;
+    }
+  }
   let total = 0;
   for (const f of input.files) total += f.size;
-  if (Array.from(input.files).some(f => f.size > MAX_PER)) {
-    status.textContent = 'Each file must be ≤10 MB.';
+  if (total > MAX_TOTAL) {
+    status.textContent = 'Total upload must be \u226450 MB.';
     input.value = '';
     return;
   }
-  if (total > MAX_TOTAL) {
-    status.textContent = 'Total upload must be ≤30 MB.';
+  if (input.files.length > 5) {
+    status.textContent = 'Max 5 files per submission.';
     input.value = '';
     return;
   }
@@ -93,26 +107,34 @@ async function loadGrade() {
 
     const r = await fetch(`${API}/api/homework/grade`, { credentials: 'include' });
     if (r.status === 404 || !r.ok) {
-      const reviewAvatar = owner.avatar ? `<img class="grade-avatar" src="${owner.avatar}" alt="${escapeHtml(owner.username)}" />` : '<span class="grade-avatar grade-avatar-fallback">R</span>';
-      card.innerHTML = `
-        <div class="grade-body">
-          ${reviewAvatar}
-        </div>
-      `;
+      card.replaceChildren();
+      const bodyOk = document.createElement('div');
+      bodyOk.className = 'grade-body';
+      if (owner.avatar && isSafeImageUrl(owner.avatar)) {
+        const img = document.createElement('img');
+        img.className = 'grade-avatar';
+        img.src = owner.avatar;
+        img.alt = String(owner.username || 'Owner');
+        bodyOk.appendChild(img);
+      } else {
+        const fallback = document.createElement('span');
+        fallback.className = 'grade-avatar grade-avatar-fallback';
+        fallback.textContent = 'R';
+        bodyOk.appendChild(fallback);
+      }
+      card.appendChild(bodyOk);
       return;
     }
 
     const g = await r.json();
     if (!g || !g.grade) return;
 
-    const reviewAvatar = g.ownerAvatar ? `<img class="grade-avatar" src="${g.ownerAvatar}" alt="${escapeHtml(g.gradedBy || 'Owner')}" />` : (owner.avatar ? `<img class="grade-avatar" src="${owner.avatar}" alt="${escapeHtml(owner.username)}" />` : '<span class="grade-avatar grade-avatar-fallback">R</span>');
-    // Build submission images safely with DOM APIs (prevent innerHTML src injection)
     const safeSubmission = document.createElement('div');
     safeSubmission.className = 'submission-images';
     (g.submissionImages || []).slice(0, 3).forEach(src => {
       try {
         const url = String(src);
-        if (!/^https:\/\/cdn\.discordapp\.com\//.test(url) && !/^https:\/\/media\.discordapp\.net\//.test(url)) return;
+        if (!isSafeImageUrl(url)) return;
         new URL(url);
         const img = document.createElement('img');
         img.className = 'submission-image';
@@ -122,13 +144,35 @@ async function loadGrade() {
         safeSubmission.appendChild(img);
       } catch(e) {}
     });
-    const feedbackHtml = `<p class="grade-feedback">${escapeHtml(g.feedback || '')}</p>`;
-    card.innerHTML = `<div class="grade-body">${reviewAvatar}</div>`;
-    const body = card.querySelector('.grade-body');
+    // Build grade card entirely via DOM APIs — no innerHTML with user data
+    card.replaceChildren();
+    const body = document.createElement('div');
+    body.className = 'grade-body';
+    const avatarUrl = g.ownerAvatar || owner.avatar;
+    if (avatarUrl && isSafeImageUrl(avatarUrl)) {
+      const img = document.createElement('img');
+      img.className = 'grade-avatar';
+      img.src = avatarUrl;
+      img.alt = String(g.gradedBy || owner.username || 'Owner');
+      body.appendChild(img);
+    } else {
+      const fallback2 = document.createElement('span');
+      fallback2.className = 'grade-avatar grade-avatar-fallback';
+      fallback2.textContent = 'R';
+      body.appendChild(fallback2);
+    }
     if (safeSubmission.children.length) body.appendChild(safeSubmission);
-    body.insertAdjacentHTML('beforeend', feedbackHtml);
+    const feedbackP = document.createElement('p');
+    feedbackP.className = 'grade-feedback';
+    feedbackP.textContent = g.feedback || '';
+    body.appendChild(feedbackP);
+    card.appendChild(body);
   } catch (e) {
-    card.innerHTML = '<p class="lede">Unable to load review — please refresh.</p>';
+    card.replaceChildren();
+    const p = document.createElement('p');
+    p.className = 'lede';
+    p.textContent = 'Unable to load review — please refresh.';
+    card.appendChild(p);
   }
 }
 
@@ -158,16 +202,34 @@ function formatDate(iso) {
 }
 
 if (location.search.includes('demoGrade=1')) {
-  document.getElementById('grade-card').innerHTML = `
-    <div class="grade-tier">A<small>92 / 100</small></div>
-    <div class="grade-body">
-      <div class="grade-row">
-        <span><strong>Graded</strong> ${new Date().toLocaleString()}</span>
-        <span><strong>By</strong> trax mentor</span>
-      </div>
-      <p class="grade-feedback">Strong thesis. Invalidation was a touch tight against the prior swing — consider giving the level one ATR of breathing room. Notes on the second entry are in Discord.</p>
-    </div>
-  `;
+  const demoCard = document.getElementById('grade-card');
+  demoCard.replaceChildren();
+  const tier = document.createElement('div');
+  tier.className = 'grade-tier';
+  tier.textContent = 'A';
+  const scoreSmall = document.createElement('small');
+  scoreSmall.textContent = '92 / 100';
+  tier.appendChild(scoreSmall);
+  const dBody = document.createElement('div');
+  dBody.className = 'grade-body';
+  const row = document.createElement('div');
+  row.className = 'grade-row';
+  const s1 = document.createElement('span');
+  const strong1 = document.createElement('strong');
+  strong1.textContent = 'Graded';
+  s1.appendChild(strong1);
+  s1.appendChild(document.createTextNode(' ' + new Date().toLocaleString()));
+  const s2 = document.createElement('span');
+  const strong2 = document.createElement('strong');
+  strong2.textContent = 'By';
+  s2.appendChild(strong2);
+  s2.appendChild(document.createTextNode(' trax mentor'));
+  row.appendChild(s1); row.appendChild(s2);
+  const fp = document.createElement('p');
+  fp.className = 'grade-feedback';
+  fp.textContent = 'Strong thesis. Invalidation was a touch tight against the prior swing — consider giving the level one ATR of breathing room. Notes on the second entry are in Discord.';
+  dBody.appendChild(row); dBody.appendChild(fp);
+  demoCard.appendChild(tier); demoCard.appendChild(dBody);
 }
 
 check();

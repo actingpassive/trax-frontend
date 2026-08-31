@@ -8,11 +8,22 @@ async function loadVideos(){
 	let loadedVideos = [];
 
 	/* ---- hardened watermark helpers ---- */
+	function escapeHtml(s){
+		return String(s).replace(/[&<>"']/g, function(c){
+			return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+		});
+	}
 	function sanitizeViewer(s){
 		let v = (typeof s === 'string' ? s : String(s || ''));
 		v = v.trim().replace(/\s+/g, ' ');
 		if(!v) return 'viewer';
-		v = v.slice(0, 32);
+		// strip control chars and limit length
+		v = v.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 32).trim();
+		if(!v) return 'viewer';
+		// allowlist: alphanumeric, space, limited punctuation _-.@; replace disallowed with ''
+		// keep broader chars but strip < > " ' & ` $ { } to prevent HTML/JS injection
+		v = v.replace(/[<>"'&`$]/g, '').replace(/[\{\}]/g, '');
+		if(!v) return 'viewer';
 		return v || 'viewer';
 	}
 	function createWatermark(viewer){
@@ -261,11 +272,31 @@ async function loadVideos(){
 			notice.setAttribute('role','status');
 			notice.setAttribute('aria-live','polite');
 			const clean = sanitizeViewer(viewer);
-			notice.innerHTML = ''
-				+ '<div class="personalizing-notice__badge"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Upgrading to forensic copy in background</div>'
-				+ '<div class="personalizing-notice__sub">drafted.world | @' + clean.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span class="personalizing-notice__queue">' + (queueLabel||'~45s') + '</span></div>'
-				+ '<div class="personalizing-notice__bar" aria-hidden="true"><div class="personalizing-notice__fill" style="width:8%"></div></div>'
-				+ '<div class="personalizing-notice__countdown">~45s</div>';
+			// Build notice via DOM APIs — no innerHTML with user data (XSS hardening)
+			const badge = document.createElement('div');
+			badge.className = 'personalizing-notice__badge';
+			badge.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Upgrading to forensic copy in background';
+			const sub = document.createElement('div');
+			sub.className = 'personalizing-notice__sub';
+			sub.textContent = 'drafted.world | @' + clean + ' ';
+			const qSpan = document.createElement('span');
+			qSpan.className = 'personalizing-notice__queue';
+			qSpan.textContent = (queueLabel||'~45s');
+			sub.appendChild(qSpan);
+			const bar = document.createElement('div');
+			bar.className = 'personalizing-notice__bar';
+			bar.setAttribute('aria-hidden','true');
+			const fillDiv = document.createElement('div');
+			fillDiv.className = 'personalizing-notice__fill';
+			fillDiv.style.width = '8%';
+			bar.appendChild(fillDiv);
+			const cd2 = document.createElement('div');
+			cd2.className = 'personalizing-notice__countdown';
+			cd2.textContent = '~45s';
+			notice.appendChild(badge);
+			notice.appendChild(sub);
+			notice.appendChild(bar);
+			notice.appendChild(cd2);
 			stage.appendChild(notice);
 			// non-blocking info only — never pause playback; generic plays with tiled watermark
 			return notice;
