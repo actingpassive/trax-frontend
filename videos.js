@@ -14,6 +14,7 @@ async function loadVideos() {
 	let selectedTopic = sections[selectedDay][0];
 	let loadedVideos = [];
 	const renderedSections = new Map();
+	const norm = s => String(s || '').trim().toLowerCase();
 
 	function renderNavigation() {
 		navigation.replaceChildren();
@@ -55,8 +56,8 @@ async function loadVideos() {
 
 	
 	function renderVideos() {
-		const visibleVideos = loadedVideos.filter(video => video.day === selectedDay && video.topic === selectedTopic);
-		list.replaceChildren(...(renderedSections.get(`${selectedDay}:${selectedTopic}`) || []));
+		const visibleVideos = loadedVideos.filter(video => norm(video.day) === norm(selectedDay) && norm(video.topic) === norm(selectedTopic));
+		list.replaceChildren(...(renderedSections.get(`${norm(selectedDay)}:${norm(selectedTopic)}`) || []));
 		status.textContent = visibleVideos.length ? '' : `No videos in ${selectedDay} / ${selectedTopic} yet.`;
 	}
 
@@ -84,7 +85,7 @@ async function loadVideos() {
 			section.className = 'section video-section';
 			section.dataset.day = video.day || '';
 			section.dataset.topic = video.topic || '';
-			const sectionKey = `${video.day || ''}:${video.topic || ''}`;
+			const sectionKey = `${norm(video.day)}:${norm(video.topic)}`;
 			if (!renderedSections.has(sectionKey)) renderedSections.set(sectionKey, []);
 			renderedSections.get(sectionKey).push(section);
 
