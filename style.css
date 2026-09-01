@@ -937,3 +937,271 @@ body::before{
 .empty-list-icon{width:42px;height:42px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;margin-bottom:6px;color:var(--muted)}
 .empty-list-title{margin:0;font-size:0.92rem;font-weight:600;color:var(--ink)}
 .empty-list-hint{margin:0;font-size:0.82rem;color:var(--muted)}
+
+/* === VIDEOS PAGE REDESIGN (worker A) === */
+.video-filters{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:stretch;
+  margin:8px 0 18px;
+  padding:14px 14px 12px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.filter-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  width:100%;
+}
+.filter-row__label{
+  flex-shrink:0;
+  width:54px;
+  font:700 .68rem "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.day-pills{
+  display:flex;
+  flex:1;
+  min-width:0;
+  gap:6px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding:2px 2px 4px;
+  margin:-2px -2px -4px;
+}
+.day-pills::-webkit-scrollbar{display:none}
+.day-pill{
+  flex:0 0 auto;
+  scroll-snap-align:start;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:38px;
+  padding:0 16px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--ink);
+  font:600 .82rem "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s,box-shadow .2s,transform .15s;
+}
+.day-pill:hover{
+  background:#1d1d24;
+  border-color:#2a2a33;
+  transform:translateY(-1px);
+}
+.day-pill.is-active{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+  box-shadow:0 6px 18px rgba(118,86,184,.35),0 0 0 1px rgba(200,180,244,.18) inset;
+}
+.day-pill.is-active:hover{background:#6a4aa6;border-color:#6a4aa6}
+.day-pill:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+.topic-pills{
+  display:flex;
+  flex:1;
+  min-width:0;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+  min-height:28px;
+}
+.topic-pill{
+  display:inline-flex;
+  align-items:center;
+  height:28px;
+  padding:0 12px;
+  background:transparent;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--muted);
+  font:600 .74rem "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.topic-pill:hover{
+  color:var(--ink);
+  border-color:#2a2a33;
+  background:var(--surface-2);
+}
+.topic-pill.is-active{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.topic-pill.is-active:hover{background:#6a4aa6;border-color:#6a4aa6}
+.topic-pill:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+.topic-pill:disabled{opacity:.4;cursor:not-allowed}
+.filter-result{
+  margin:4px 0 0;
+  padding-left:66px;
+  color:var(--muted);
+  font-size:.78rem;
+  letter-spacing:.02em;
+}
+.video-hero{
+  position:relative;
+  margin:0 0 22px;
+  padding:0;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 12px 36px rgba(0,0,0,.28);
+}
+.video-hero[hidden]{display:none}
+.video-hero__media{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#0e0e12;
+  overflow:hidden;
+}
+.video-hero__media img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.video-hero__media-fallback{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted);
+}
+.video-hero__day{
+  position:absolute;
+  top:14px;
+  left:14px;
+  z-index:2;
+  display:inline-flex;
+  align-items:center;
+  height:26px;
+  padding:0 11px;
+  border-radius:999px;
+  background:rgba(10,10,12,.72);
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--accent-soft);
+  font:700 .68rem "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.video-hero__gradient{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:62%;
+  background:linear-gradient(to top, rgba(10,10,12,.92) 0%, rgba(10,10,12,.72) 38%, rgba(10,10,12,.25) 78%, transparent 100%);
+  pointer-events:none;
+  z-index:1;
+}
+.video-hero__body{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:2;
+  padding:18px 20px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+.video-hero__title{
+  margin:0;
+  font-family:Georgia,serif;
+  font-size:clamp(1.4rem,4vw,2rem);
+  font-weight:400;
+  color:var(--ink);
+  line-height:1.15;
+  text-shadow:0 1px 6px rgba(0,0,0,.55);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.video-hero__meta{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  color:rgba(243,243,245,.78);
+  font-size:.82rem;
+  letter-spacing:.02em;
+}
+.video-hero__topic{
+  display:inline-flex;
+  align-items:center;
+  height:22px;
+  padding:0 10px;
+  border-radius:999px;
+  background:rgba(118,86,184,.85);
+  color:#fff;
+  font:700 .68rem "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.video-hero__play{
+  position:absolute;
+  z-index:3;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background:rgba(118,86,184,.92);
+  border:0;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow:0 12px 32px rgba(118,86,184,.4);
+  transition:transform .18s,background .18s;
+}
+.video-hero__play:hover{background:var(--accent);transform:translate(-50%,-50%) scale(1.06)}
+.video-hero__play svg{width:30px;height:30px;margin-left:3px}
+.video-hero__play:focus-visible{outline:2px solid var(--accent-soft);outline-offset:3px}
+@media (max-width:560px){
+  .filter-row{flex-direction:column;align-items:stretch;gap:6px}
+  .filter-row__label{width:auto}
+  .day-pills{width:100%}
+  .filter-result{padding-left:0}
+  .video-hero{border-radius:12px}
+  .video-hero__body{padding:14px 16px 16px}
+  .video-hero__play{width:54px;height:54px}
+  .video-hero__play svg{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .day-pill,
+  .topic-pill,
+  .video-hero__play{transition:none}
+  .day-pill:hover,
+  .video-hero__play:hover{transform:none}
+}
+/* === END VIDEOS PAGE REDESIGN (worker A) === */

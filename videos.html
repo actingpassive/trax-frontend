@@ -24,19 +24,23 @@
 			</div>
 		</div>
 		<div class="video-filters" role="toolbar" aria-label="Filter videos">
-			<label for="filterDay" class="sr-only">Filter by Day</label>
-			<select id="filterDay" aria-label="Filter by Day">
-				<option value="">All Days</option>
-				<option value="Day 1">Day 1</option>
-				<option value="Day 2">Day 2</option>
-				<option value="Day 3">Day 3</option>
-				<option value="Day 4">Day 4</option>
-			</select>
-			<label for="filterTopic" class="sr-only">Filter by Topic</label>
-			<select id="filterTopic" aria-label="Filter by Topic" disabled>
-				<option value="">Select Day first</option>
-			</select>
+			<div class="filter-row filter-row--days">
+				<span class="filter-row__label" aria-hidden="true">Day</span>
+				<div class="day-pills" id="dayPills" role="group" aria-label="Filter by Day">
+					<button type="button" class="day-pill is-active" data-day="" aria-pressed="true">All</button>
+					<button type="button" class="day-pill" data-day="Day 1" aria-pressed="false">Day 1</button>
+					<button type="button" class="day-pill" data-day="Day 2" aria-pressed="false">Day 2</button>
+					<button type="button" class="day-pill" data-day="Day 3" aria-pressed="false">Day 3</button>
+					<button type="button" class="day-pill" data-day="Day 4" aria-pressed="false">Day 4</button>
+				</div>
+			</div>
+			<div class="filter-row filter-row--topics">
+				<span class="filter-row__label" aria-hidden="true">Topic</span>
+				<div class="topic-pills" id="topicPills" role="group" aria-label="Filter by Topic"></div>
+			</div>
+			<p class="filter-result" id="filterResult" aria-live="polite">Showing all videos</p>
 		</div>
+		<section id="video-hero" class="video-hero" hidden aria-label="Featured video"></section>
 		<p id="video-status" class="lede">Loading videos...</p>
 		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
 		<section id="video-list" class="sections video-list" aria-live="polite"></section>

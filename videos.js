@@ -53,41 +53,67 @@ async function loadVideos(){
 		});
 	}
 	function populateFilterTopic(){
-		const topicSel = document.getElementById('filterTopic');
-		if(!topicSel) return;
-		topicSel.innerHTML = '';
+		const container = document.getElementById('topicPills');
+		if(!container) return;
+		container.replaceChildren();
 		if(!filterDay || !VIDEO_SECTIONS[filterDay]){
-			topicSel.disabled = true;
-			const opt = document.createElement('option');
-			opt.value = '';
-			opt.textContent = 'Select Day first';
-			opt.selected = true;
-			topicSel.appendChild(opt);
+			const empty = document.createElement('button');
+			empty.type = 'button';
+			empty.className = 'topic-pill is-disabled';
+			empty.disabled = true;
+			empty.setAttribute('aria-disabled','true');
+			empty.textContent = 'Select Day first';
+			container.appendChild(empty);
 			return;
 		}
-		topicSel.disabled = false;
-		const all = document.createElement('option');
-		all.value = '';
-		all.textContent = 'All Topics';
-		if(!filterTopic) all.selected = true;
-		topicSel.appendChild(all);
+		const allBtn = document.createElement('button');
+		allBtn.type = 'button';
+		allBtn.className = 'topic-pill';
+		allBtn.dataset.topic = '';
+		allBtn.setAttribute('aria-pressed', !filterTopic ? 'true' : 'false');
+		if(!filterTopic) allBtn.classList.add('is-active');
+		allBtn.textContent = 'All Topics';
+		container.appendChild(allBtn);
 		VIDEO_SECTIONS[filterDay].forEach(function(t){
-			const o = document.createElement('option');
-			o.value = t;
-			o.textContent = t;
-			if(filterTopic && String(filterTopic).toLowerCase() === String(t).toLowerCase()) o.selected = true;
-			topicSel.appendChild(o);
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'topic-pill';
+			b.dataset.topic = t;
+			const active = filterTopic && String(filterTopic).toLowerCase() === String(t).toLowerCase();
+			b.setAttribute('aria-pressed', active ? 'true' : 'false');
+			if(active) b.classList.add('is-active');
+			b.textContent = t;
+			container.appendChild(b);
 		});
-		// if filterTopic not in current day's list, keep All Topics selected but don't clear state yet — caller resets
+		// wire clicks (single-select; clicking active pill clears filter)
+		container.querySelectorAll('.topic-pill').forEach(function(btn){
+			if(btn.disabled) return;
+			btn.addEventListener('click', function(){
+				const wasActive = btn.classList.contains('is-active');
+				const next = wasActive ? '' : (btn.dataset.topic || '');
+				filterTopic = next;
+				persistFilter();
+				applyFilterAndRender();
+			});
+		});
 	}
 	function applyFilterAndRender(){
 		filteredVideos = getFilteredVideos();
+		const resultEl = document.getElementById('filterResult');
+		if(resultEl){
+			const parts = [];
+			if(filterDay) parts.push(filterDay);
+			else parts.push('All Days');
+			if(filterTopic) parts.push(filterTopic);
+			else if(filterDay) parts.push('All Topics');
+			const n = filteredVideos.length;
+			resultEl.textContent = 'Showing ' + n + (n === 1 ? ' video' : ' videos') + ' \u00b7 ' + parts.join(' \u00b7 ');
+		}
 		renderVideos();
 	}
 	function initFilters(){
-		const daySel = document.getElementById('filterDay');
-		const topicSel = document.getElementById('filterTopic');
-		if(!daySel || !topicSel) return;
+		const dayPills = document.querySelectorAll('[data-day]');
+		if(!dayPills || !dayPills.length) return;
 		// restore from query param > localStorage
 		let q = getQueryFilter();
 		let storedDay = '';
@@ -106,33 +132,40 @@ async function loadVideos(){
 			const valid = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
 			if(!valid) filterTopic = '';
 		}
-		if(filterDay) daySel.value = filterDay;
-		else daySel.value = '';
+		// sync day pill aria-pressed/class
+		dayPills.forEach(function(b){
+			const d = b.getAttribute('data-day') || '';
+			const active = (d === filterDay) || (!filterDay && d === '');
+			b.classList.toggle('is-active', active);
+			b.setAttribute('aria-pressed', active ? 'true' : 'false');
+		});
 		populateFilterTopic();
-		if(filterTopic && topicSel && !topicSel.disabled){
+		if(filterTopic && filterDay){
 			// ensure exact casing from VIDEO_SECTIONS is used for display sync
 			const match = VIDEO_SECTIONS[filterDay] ? VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); }) : null;
-			if(match){
-				filterTopic = match;
-				topicSel.value = match;
-			}
+			if(match) filterTopic = match;
 		}
-		daySel.addEventListener('change', function(){
-			filterDay = daySel.value || '';
-			// reset topic if not in new day's list
-			if(filterDay && filterTopic){
-				const ok = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
-				if(!ok) filterTopic = '';
-			}
-			if(!filterDay) filterTopic = '';
-			populateFilterTopic();
-			persistFilter();
-			applyFilterAndRender();
-		});
-		topicSel.addEventListener('change', function(){
-			filterTopic = topicSel.value || '';
-			persistFilter();
-			applyFilterAndRender();
+		dayPills.forEach(function(b){
+			b.addEventListener('click', function(){
+				const next = b.getAttribute('data-day') || '';
+				if(next === filterDay) return;
+				filterDay = next;
+				// reset topic if not in new day's list
+				if(filterDay && filterTopic){
+					const ok = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
+					if(!ok) filterTopic = '';
+				}
+				if(!filterDay) filterTopic = '';
+				dayPills.forEach(function(btn){
+					const d = btn.getAttribute('data-day') || '';
+					const active = (d === filterDay) || (!filterDay && d === '');
+					btn.classList.toggle('is-active', active);
+					btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+				});
+				populateFilterTopic();
+				persistFilter();
+				applyFilterAndRender();
+			});
 		});
 		// initial sync to query if restored from storage but query empty
 		persistFilter();
@@ -636,9 +669,155 @@ async function loadVideos(){
 		else countEl.textContent = n + ' videos';
 	}
 
+	function svgPosterDataUrl(video){
+		const topic = (video && (video.topic || video.name)) ? String(video.topic || video.name) : 'Untitled';
+		const day = (video && video.day) ? String(video.day) : '';
+		const safeTopic = escapeHtml(topic).slice(0, 48);
+		const safeDay = escapeHtml(day).slice(0, 16);
+		const safeBrand = escapeHtml('drafted.world').slice(0, 24);
+		const svg = ''
+			+ '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice">'
+			+ '<defs>'
+			+ '<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">'
+			+ '<stop offset="0" stop-color="#1a1a22"/>'
+			+ '<stop offset="1" stop-color="#0a0a0c"/>'
+			+ '</linearGradient>'
+			+ '<radialGradient id="acc" cx="0.85" cy="0.15" r="0.7">'
+			+ '<stop offset="0" stop-color="#7656b8" stop-opacity="0.35"/>'
+			+ '<stop offset="1" stop-color="#7656b8" stop-opacity="0"/>'
+			+ '</radialGradient>'
+			+ '</defs>'
+			+ '<rect width="640" height="360" fill="url(#bg)"/>'
+			+ '<rect width="640" height="360" fill="url(#acc)"/>'
+			+ '<text x="320" y="170" text-anchor="middle" font-family="Georgia, serif" font-size="40" fill="#ffffff" fill-opacity="0.22" font-weight="400">' + safeTopic + '</text>'
+			+ '<text x="320" y="220" text-anchor="middle" font-family="Trebuchet MS, Verdana, sans-serif" font-size="14" fill="#9a9aa8" fill-opacity="0.85" letter-spacing="2">' + safeBrand + '</text>'
+			+ (safeDay ? '<g><rect x="280" y="246" width="80" height="26" rx="13" ry="13" fill="none" stroke="#7656b8" stroke-opacity="0.7" stroke-width="1.2"/><text x="320" y="263" text-anchor="middle" font-family="Trebuchet MS, Verdana, sans-serif" font-size="12" fill="#b8a7e0">' + safeDay + '</text></g>' : '')
+			+ '</svg>';
+		try{
+			return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+		}catch(e){
+			return '';
+		}
+	}
+
+	function makePosterPlaceholder(video){
+		const wrap = document.createElement('div');
+		wrap.className = 'video-poster-placeholder';
+		wrap.setAttribute('aria-hidden','true');
+		// class hooks Worker A will style via .video-poster-placeholder / .video-poster-placeholder__topic / .video-poster-placeholder__brand / .video-poster-placeholder__day
+		wrap.style.cssText = 'position:relative;width:100%;aspect-ratio:16/9;background:linear-gradient(180deg,#1a1a22 0%,#0a0a0c 100%);overflow:hidden;border-radius:inherit;';
+		const glow = document.createElement('div');
+		glow.className = 'video-poster-placeholder__glow';
+		glow.style.cssText = 'position:absolute;inset:0;background:radial-gradient(circle at 85% 15%, rgba(118,86,184,0.18) 0%, rgba(118,86,184,0) 60%);pointer-events:none;';
+		const topic = document.createElement('div');
+		topic.className = 'video-poster-placeholder__topic';
+		topic.style.cssText = 'position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:Georgia,serif;font-size:clamp(20px,4vw,36px);color:#ffffff;opacity:.24;text-align:center;max-width:80%;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+		topic.textContent = (video && (video.topic || video.name)) ? String(video.topic || video.name) : 'Untitled';
+		const brand = document.createElement('div');
+		brand.className = 'video-poster-placeholder__brand';
+		brand.style.cssText = 'position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);font-family:Trebuchet MS,Verdana,sans-serif;font-size:13px;color:#9a9aa8;letter-spacing:.18em;text-transform:lowercase;opacity:.9;';
+		brand.textContent = 'drafted.world';
+		wrap.appendChild(glow);
+		wrap.appendChild(topic);
+		wrap.appendChild(brand);
+		if(video && video.day){
+			const dayChip = document.createElement('span');
+			dayChip.className = 'video-poster-placeholder__day';
+			dayChip.style.cssText = 'position:absolute;left:50%;top:74%;display:inline-block;padding:5px 14px;border:1px solid rgba(118,86,184,0.65);color:#b8a7e0;font-family:Trebuchet MS,Verdana,sans-serif;font-size:12px;border-radius:999px;letter-spacing:.04em;background:transparent;transform:translate(-50%,-50%);';
+			dayChip.textContent = String(video.day);
+			wrap.appendChild(dayChip);
+		}
+		return wrap;
+	}
+
+	function renderHero(video){
+		const hero = document.getElementById('video-hero');
+		if(!hero) return;
+		hero.replaceChildren();
+		if(!video){ hero.hidden = true; return; }
+		hero.hidden = false;
+		const card = document.createElement('div');
+		card.className = 'video-hero__card';
+		// class hook Worker A will style
+		card.style.cssText = 'position:relative;border-radius:14px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 40px rgba(0,0,0,0.35);';
+		const thumbWrap = document.createElement('button');
+		thumbWrap.type = 'button';
+		thumbWrap.className = 'video-hero__thumb';
+		thumbWrap.setAttribute('aria-label', 'Play featured video: ' + (video.topic || video.name || 'Untitled'));
+		thumbWrap.style.cssText = 'position:relative;display:block;width:100%;aspect-ratio:16/9;padding:0;border:0;background:#0a0a0c;cursor:pointer;overflow:hidden;';
+		const posterHost = document.createElement('div');
+		posterHost.className = 'video-hero__poster';
+		posterHost.style.cssText = 'position:absolute;inset:0;';
+		const thumbSrc = video.thumbnail ? ('' + apiBase + video.thumbnail) : svgPosterDataUrl(video);
+		if(video.thumbnail){
+			const img = document.createElement('img');
+			img.src = thumbSrc;
+			img.alt = '';
+			img.loading = 'lazy';
+			img.crossOrigin = 'use-credentials';
+			img.setAttribute('crossorigin','use-credentials');
+			img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;';
+			img.onerror = function(){
+				posterHost.replaceChildren(makePosterPlaceholder(video));
+			};
+			posterHost.appendChild(img);
+		}else{
+			posterHost.appendChild(makePosterPlaceholder(video));
+		}
+		thumbWrap.appendChild(posterHost);
+		const playBadge = document.createElement('span');
+		playBadge.className = 'video-hero__play';
+		playBadge.setAttribute('aria-hidden','true');
+		playBadge.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+		playBadge.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:rgba(10,10,12,0.7);color:#fff;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.12);box-shadow:0 8px 24px rgba(0,0,0,0.45);';
+		thumbWrap.appendChild(playBadge);
+		const meta = document.createElement('div');
+		meta.className = 'video-hero__meta';
+		meta.style.cssText = 'padding:18px 20px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+		if(video.day){
+			const chip = document.createElement('span');
+			chip.className = 'day-chip day-chip--outline';
+			chip.style.cssText = 'display:inline-block;padding:4px 12px;border:1px solid var(--accent);color:var(--accent);font-family:Trebuchet MS,Verdana,sans-serif;font-size:12px;border-radius:999px;letter-spacing:.04em;background:transparent;';
+			chip.textContent = String(video.day);
+			meta.appendChild(chip);
+		}
+		const title = document.createElement('h2');
+		title.className = 'video-hero__title';
+		title.style.cssText = 'margin:0;font-family:Georgia,serif;font-weight:400;font-size:clamp(1.3rem,3vw,1.8rem);color:var(--ink);flex:1;min-width:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+		title.textContent = video.topic || video.name || 'Untitled';
+		meta.appendChild(title);
+		const dateText = formatCardDate(video.createdAt);
+		if(dateText){
+			const date = document.createElement('span');
+			date.className = 'video-hero__date';
+			date.style.cssText = 'font-size:.85rem;color:var(--muted);';
+			date.textContent = dateText;
+			meta.appendChild(date);
+		}
+		card.appendChild(thumbWrap);
+		card.appendChild(meta);
+		hero.appendChild(card);
+		// click: scroll to matching card and auto-play
+		thumbWrap.addEventListener('click', function(){
+			try{
+				const target = list.querySelector('[data-video-id="' + (video.id || '') + '"]');
+				if(target){
+					const playerEl = target.querySelector('video');
+					target.scrollIntoView({behavior:'smooth', block:'start'});
+					if(playerEl){
+						try{ playerEl.muted = false; }catch(e){}
+						const p = playerEl.play();
+						if(p && typeof p.catch === 'function') p.catch(function(){});
+					}
+				}
+			}catch(e){}
+		});
+	}
+
 	async function renderVideos(){
 		if(!loadedVideos.length){
 			list.replaceChildren();
+			renderHero(null);
 			const empty = document.createElement('div');
 			empty.className = 'empty-list';
 			empty.innerHTML = '<div class="empty-list-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="20" height="20" aria-hidden="true"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg></div><p class="empty-list-title">No videos yet</p><p class="empty-list-hint">Videos will appear here once published.</p>';
@@ -650,6 +829,7 @@ async function loadVideos(){
 		filteredVideos = getFilteredVideos();
 		if(!filteredVideos.length){
 			list.replaceChildren();
+			renderHero(null);
 			const empty = document.createElement('div');
 			empty.className = 'empty-list';
 			const dayLabel = filterDay ? filterDay : 'All Days';
@@ -717,11 +897,21 @@ async function loadVideos(){
 			section.className = 'section video-section';
 			section.dataset.day = video.day || '';
 			section.dataset.topic = video.topic || '';
+			if(video.id) section.dataset.videoId = String(video.id);
 
 			const titleRow = document.createElement('div');
-			titleRow.style.cssText = 'display:flex;align-items:center;gap:12px;margin:0 0 16px;';
-			const thumbWrap = document.createElement('div');
-			thumbWrap.style.cssText = 'width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#16161b;border:1px solid #1f1f25;display:flex;align-items:center;justify-content:center;position:relative;';
+			titleRow.className = 'video-card-header';
+			// class hook Worker A will style; inline layout covers aspect-ratio + structure
+			titleRow.style.cssText = 'display:flex;flex-direction:column;gap:14px;padding:18px 18px 14px;';
+			const thumbBtn = document.createElement('button');
+			thumbBtn.type = 'button';
+			thumbBtn.className = 'video-card-thumb';
+			const labelText = (video.topic || video.name || 'Untitled');
+			thumbBtn.setAttribute('aria-label', 'Play video: ' + labelText);
+			thumbBtn.style.cssText = 'position:relative;display:block;width:100%;aspect-ratio:16/9;padding:0;border:0;background:#0a0a0c;cursor:pointer;overflow:hidden;border-radius:10px;';
+			const posterHost = document.createElement('div');
+			posterHost.className = 'video-card-thumb__poster';
+			posterHost.style.cssText = 'position:absolute;inset:0;';
 			if(video.thumbnail){
 				const thumb = document.createElement('img');
 				thumb.src = '' + apiBase + video.thumbnail;
@@ -729,34 +919,62 @@ async function loadVideos(){
 				thumb.loading = 'lazy';
 				thumb.crossOrigin = 'use-credentials';
 				thumb.setAttribute('crossorigin','use-credentials');
-				thumb.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-				thumb.onerror = function(){ thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>'; };
-				thumbWrap.appendChild(thumb);
-				const thumbWm = document.createElement('div');
-				thumbWm.className = 'thumb-watermark';
-				thumbWm.setAttribute('aria-hidden','true');
-				thumbWm.textContent = 'drafted.world | @' + sanitizeViewer(viewerName);
-				thumbWrap.appendChild(thumbWm);
+				thumb.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;';
+				thumb.onerror = function(){
+					posterHost.replaceChildren(makePosterPlaceholder(video));
+				};
+				posterHost.appendChild(thumb);
 			}else{
-				thumbWrap.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="18" height="18" aria-hidden="true" style="color:#6b6b78"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>';
+				posterHost.appendChild(makePosterPlaceholder(video));
 			}
-			titleRow.appendChild(thumbWrap);
+			thumbBtn.appendChild(posterHost);
+			// duration badge (top-right) when duration is available
+			if(video.duration){
+				const durBadge = document.createElement('span');
+				durBadge.className = 'video-card-thumb__duration';
+				durBadge.style.cssText = 'position:absolute;top:10px;right:10px;padding:3px 8px;font-family:Trebuchet MS,Verdana,sans-serif;font-size:12px;color:#fff;background:rgba(10,10,12,0.78);border-radius:6px;letter-spacing:.04em;';
+				durBadge.textContent = formatPlayerTime(Number(video.duration) || 0);
+				thumbBtn.appendChild(durBadge);
+			}
+			// play badge centered on hover (purely visual; click toggles play)
+			const playBadge = document.createElement('span');
+			playBadge.className = 'video-card-thumb__play';
+			playBadge.setAttribute('aria-hidden','true');
+			playBadge.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+			playBadge.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:rgba(10,10,12,0.65);color:#fff;backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,0.12);box-shadow:0 6px 18px rgba(0,0,0,0.4);opacity:.85;';
+			thumbBtn.appendChild(playBadge);
+			titleRow.appendChild(thumbBtn);
+
+			const metaRow = document.createElement('div');
+			metaRow.className = 'video-card-meta';
+			metaRow.style.cssText = 'display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;';
+			if(video.day){
+				const dayChip = document.createElement('span');
+				dayChip.className = 'day-chip day-chip--outline';
+				dayChip.style.cssText = 'display:inline-block;padding:4px 12px;border:1px solid var(--accent);color:var(--accent);font-family:Trebuchet MS,Verdana,sans-serif;font-size:12px;border-radius:999px;letter-spacing:.04em;background:transparent;flex-shrink:0;';
+				dayChip.textContent = String(video.day);
+				metaRow.appendChild(dayChip);
+			}
 			const textWrap = document.createElement('div');
+			textWrap.className = 'video-card-text';
 			textWrap.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;';
 			const title = document.createElement('h3');
+			title.className = 'video-card-title';
 			const titleText = video.topic ? ((video.day ? video.day + ' – ' : '') + (video.topic || video.name)) : (video.name || 'Untitled');
 			title.textContent = titleText;
-			title.style.cssText = 'margin:0;font-family:Georgia,serif;font-size:1.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+			title.style.cssText = 'margin:0;font-family:Georgia,serif;font-weight:400;font-size:clamp(1.15rem,2.6vw,1.55rem);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;';
 			title.title = titleText;
 			textWrap.appendChild(title);
 			const dateText = formatCardDate(video.createdAt);
 			if(dateText){
-				const dateEl = document.createElement('div');
+				const dateEl = document.createElement('span');
+				dateEl.className = 'video-card-date';
 				dateEl.textContent = dateText;
-				dateEl.style.cssText = 'font-size:0.82rem;color:var(--muted);';
+				dateEl.style.cssText = 'font-size:.82rem;color:var(--muted);';
 				textWrap.appendChild(dateEl);
 			}
-			titleRow.appendChild(textWrap);
+			metaRow.appendChild(textWrap);
+			titleRow.appendChild(metaRow);
 
 			const wrapper = document.createElement('div');
 			wrapper.className = 'custom-player-wrapper';
@@ -776,6 +994,7 @@ async function loadVideos(){
 			player.setAttribute('playsinline','');
 			player.controls = false;
 			if(video.thumbnail) player.poster = '' + apiBase + video.thumbnail;
+			else { const svgUrl = svgPosterDataUrl(video); if(svgUrl) player.poster = svgUrl; }
 			// Prefer personalizedUrl when backend already burns; fallback to generic signed url
 			(function setInitialSrc(){
 				// Always start from generic MP4 (video.url). Never use manifest URL or
@@ -1000,6 +1219,9 @@ async function loadVideos(){
 				if(playBtn) playBtn.addEventListener('click', togglePlay);
 				if(bigPlayBtn) bigPlayBtn.addEventListener('click', togglePlay);
 				player.addEventListener('click', togglePlay);
+				// Card thumbnail click also toggles play (delegated from outer header)
+				const cardThumbBtn = section.querySelector('.video-card-thumb');
+				if(cardThumbBtn) cardThumbBtn.addEventListener('click', togglePlay);
 				player.addEventListener('play', function(){
 					updatePlayIcon(true);
 					bigPlayBtn.style.display = 'none';
@@ -1220,6 +1442,7 @@ async function loadVideos(){
 			})();
 		});
 		list.replaceChildren(...articles);
+		renderHero(filteredVideos[0] || null);
 	}
 
 	try{
