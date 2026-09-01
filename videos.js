@@ -708,6 +708,8 @@ async function loadVideos(){
 		const hero = document.getElementById('video-hero');
 		if(!hero) return;
 		hero.replaceChildren();
+		hero.hidden = true;
+		return;
 		if(!video){ hero.hidden = true; return; }
 		hero.hidden = false;
 		const card = document.createElement('div');

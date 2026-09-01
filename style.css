@@ -571,21 +571,35 @@ body::before{
 .section.alt{flex-direction:row-reverse}
 .card{padding:14px;border-radius:6px;background:var(--surface);color:var(--muted)}
 
-/* thumbnail grid — responsive auto-fill 280px per spec */
+/* thumbnail grid — responsive 3/2/1 columns */
 #videoGrid{
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-}
-#videoGrid.video-list--grid,
-.video-list--grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
-  gap:16px;
+  grid-template-columns:repeat(3, 1fr);
+  gap:20px;
   padding:0;
   max-height:none;
   background:transparent;
   border:0;
+}
+#videoGrid.video-list--grid,
+.video-list--grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:20px;
+  padding:0;
+  max-height:none;
+  background:transparent;
+  border:0;
+}
+@media (max-width:960px){
+  #videoGrid, #videoGrid.video-list--grid, .video-list--grid{
+    grid-template-columns:repeat(2, 1fr);
+  }
+}
+@media (max-width:600px){
+  #videoGrid, #videoGrid.video-list--grid, .video-list--grid{
+    grid-template-columns:1fr;
+  }
 }
 .video-list--grid .video-section{
   flex-direction:column;
@@ -597,10 +611,18 @@ body::before{
   background:var(--surface);
   gap:0;
   margin-bottom:0;
+  transition:box-shadow .2s, border-color .2s;
+}
+.video-list--grid .video-section:hover{
+  border-color:var(--accent);
+  box-shadow:0 8px 28px rgba(118,86,184,.18);
 }
 .video-list--grid .video-card-header{
-  padding:12px !important;
-  gap:10px !important;
+  padding:0 !important;
+  gap:0 !important;
+}
+.video-list--grid .video-card-header .video-card-meta{
+  padding:14px 16px 16px;
 }
 .video-list--grid .video-card-title{
   padding:0 !important;
@@ -1225,14 +1247,7 @@ body::before{
   letter-spacing:.02em;
 }
 .video-hero{
-  position:relative;
-  margin:0 0 22px;
-  padding:0;
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 12px 36px rgba(0,0,0,.28);
+  display:none !important;
 }
 .video-hero[hidden]{display:none}
 .video-hero__media{
