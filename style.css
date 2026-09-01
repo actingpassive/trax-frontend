@@ -260,16 +260,51 @@ body::before{
   text-shadow:0 1px 3px #000;
   user-select:none;
 }
-/* hardened tiled forensic watermark — 3×3 grid, double layer with burned cache */
+/* hardened tiled forensic watermark — 9 tiles: center + 4 corners + 4 edge-centers (matches ffmpeg 9 drawtext)
+   FIX: overlay is INSIDE the element that goes fullscreen (#videoModal / .video-modal-stage) using absolute inset
+   with clamp()/vw so it scales proportionally and never clips at top. All 9 tiles kept scaled (not reduced on mobile). */
 .video-watermark-tiled{
-  position:absolute;inset:0;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;pointer-events:none;user-select:none;mix-blend-mode:normal;
+  position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;mix-blend-mode:normal;overflow:hidden;
+  display:block;
+  box-sizing:border-box;
+  padding:clamp(8px,1.2vw,16px); /* inner padding ensures edge tiles stay INSIDE video bounds even when letterboxed */
 }
 .video-watermark__tile{
-  color:rgba(255,255,255,.55);font:700 .68rem/1.2 system-ui,-apple-system,sans-serif;letter-spacing:.08em;text-transform:lowercase;text-shadow:0 1px 2px rgba(0,0,0,.7);opacity:.09;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));white-space:nowrap;animation:wm-drift 4.2s ease-in-out infinite alternate;will-change:transform;
+  position:absolute;
+  color:rgba(255,255,255,.92);
+  font-family:system-ui,-apple-system,sans-serif;
+  font-weight:700;
+  line-height:1.2;
+  letter-spacing:.06em;
+  text-transform:lowercase;
+  white-space:nowrap;
+  text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.55);
+  max-width:88%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  will-change:transform;
+  pointer-events:none;
+  box-sizing:border-box;
 }
+/* center is larger and 0.10, edges 0.07 — faint but readable, not obscuring even when combined with burned */
+.video-watermark__tile--center{
+  left:50%;top:50%;
+  transform:translate(-50%,-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));
+  font-size:clamp(12px,1.6vw,18px);
+  opacity:.10;
+}
+.video-watermark__tile--tl{left:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--tr{right:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);left:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--bl{left:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--br{right:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);left:auto;top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--tc{left:50%;top:clamp(12px,1.8vw,22px);transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--bc{left:50%;bottom:clamp(12px,1.8vw,22px);top:auto;transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--ml{left:clamp(12px,1.8vw,22px);top:50%;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--mr{right:clamp(12px,1.8vw,22px);top:50%;left:auto;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
 @keyframes wm-drift{from{transform:rotate(var(--r,0deg)) translate(-8px,-6px) translate(var(--dx,0),var(--dy,0))} to{transform:rotate(var(--r,0deg)) translate(8px,6px) translate(var(--dx,0),var(--dy,0))}}
 .video-watermark-canvas{
-  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:.09;z-index:2;
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:3;
+  display:block;
 }
 /* thumbnail watermark — shows same drafted.world | @viewer as video but scaled down */
 .thumb-watermark{
@@ -316,8 +351,14 @@ body::before{
 }
 .custom-player-wrapper:fullscreen{width:100vw!important;height:100vh!important;border-radius:0;border:none;align-items:center;background:#000;}
 .custom-player-wrapper:-webkit-full-screen{width:100vw!important;height:100vh!important;border-radius:0;border:none;align-items:center;background:#000;}
+.custom-player-wrapper:-moz-full-screen{width:100vw!important;height:100vh!important;border-radius:0;border:none;align-items:center;background:#000;}
+.custom-player-wrapper:-ms-fullscreen{width:100vw!important;height:100vh!important;border-radius:0;border:none;align-items:center;background:#000;}
+.custom-player-wrapper:fullscreen::backdrop{background:#000;}
+.custom-player-wrapper:-webkit-full-screen::backdrop{background:#000;}
 .custom-player-wrapper:fullscreen .video-player{max-height:100%!important;height:100%!important;flex:1;}
 .custom-player-wrapper:-webkit-full-screen .video-player{max-height:100%!important;height:100%!important;flex:1;}
+.custom-player-wrapper:-moz-full-screen .video-player{max-height:100%!important;height:100%!important;flex:1;}
+.custom-player-wrapper:-ms-fullscreen .video-player{max-height:100%!important;height:100%!important;flex:1;}
 .video-player{display:block;width:100%;max-width:100%;height:auto;max-height:68vh;object-fit:contain;background:#000;}
 .big-play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;background:rgba(118,86,184,0.9);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,background .2s;z-index:2;box-shadow:0 8px 24px rgba(118,86,184,0.3);}
 .big-play-btn:hover{transform:translate(-50%,-50%) scale(1.08);background:var(--accent);}
@@ -519,20 +560,27 @@ body::before{
   border-bottom:0;
   border-top:0;
 }
-/* watermark must not affect flex sizing — absolute overlay only */
+/* watermark must not affect flex sizing — absolute overlay only, stays INSIDE wrapper that goes fullscreen */
 .video-watermark-tiled,
 .video-watermark-canvas{
   position:absolute !important;
   inset:0 !important;
   pointer-events:none !important;
+  z-index:3 !important;
 }
 .section.alt{flex-direction:row-reverse}
 .card{padding:14px;border-radius:6px;background:var(--surface);color:var(--muted)}
 
-/* gallery grid – list vs grid toggle */
+/* thumbnail grid — responsive auto-fill 280px per spec */
+#videoGrid{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+#videoGrid.video-list--grid,
 .video-list--grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
   gap:16px;
   padding:0;
   max-height:none;
@@ -575,25 +623,11 @@ body::before{
 .video-list--grid .video-section .video-player{max-height:none}
 .video-list--grid .empty-list{grid-column:1/-1}
 
-/* fullscreen hover controls – match admin gradient */
-.custom-player-wrapper:fullscreen .video-player-controls{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  background:linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.15) 85%, transparent 100%);
-  background-color:rgba(12,12,14,0.72);
-  border-top:0;
-  padding:14px 16px 16px;
-  opacity:0;
-  transform:translateY(8px);
-  transition:opacity 220ms ease,transform 220ms ease;
-  pointer-events:none;
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-  z-index:5;
-}
-.custom-player-wrapper:-webkit-full-screen .video-player-controls{
+/* fullscreen hover controls – match admin gradient — with all vendor prefixes */
+.custom-player-wrapper:fullscreen .video-player-controls,
+.custom-player-wrapper:-webkit-full-screen .video-player-controls,
+.custom-player-wrapper:-moz-full-screen .video-player-controls,
+.custom-player-wrapper:-ms-fullscreen .video-player-controls{
   position:absolute;
   left:0;
   right:0;
@@ -612,37 +646,198 @@ body::before{
 }
 .custom-player-wrapper:fullscreen:hover .video-player-controls,
 .custom-player-wrapper:fullscreen.is-controls-visible .video-player-controls,
-.custom-player-wrapper:fullscreen:focus-within .video-player-controls{
-  opacity:1;
-  transform:translateY(0);
-  pointer-events:auto;
-}
+.custom-player-wrapper:fullscreen:focus-within .video-player-controls,
 .custom-player-wrapper:-webkit-full-screen:hover .video-player-controls,
 .custom-player-wrapper:-webkit-full-screen.is-controls-visible .video-player-controls,
-.custom-player-wrapper:-webkit-full-screen:focus-within .video-player-controls{
+.custom-player-wrapper:-webkit-full-screen:focus-within .video-player-controls,
+.custom-player-wrapper:-moz-full-screen:hover .video-player-controls,
+.custom-player-wrapper:-moz-full-screen.is-controls-visible .video-player-controls,
+.custom-player-wrapper:-moz-full-screen:focus-within .video-player-controls,
+.custom-player-wrapper:-ms-fullscreen:hover .video-player-controls,
+.custom-player-wrapper:-ms-fullscreen.is-controls-visible .video-player-controls,
+.custom-player-wrapper:-ms-fullscreen:focus-within .video-player-controls{
   opacity:1;
   transform:translateY(0);
   pointer-events:auto;
 }
-.custom-player-wrapper:fullscreen .video-player-timeline__track{background:rgba(255,255,255,0.22)}
-.custom-player-wrapper:-webkit-full-screen .video-player-timeline__track{background:rgba(255,255,255,0.22)}
-.custom-player-wrapper:fullscreen .video-player-timeline__fill{background:#fff}
-.custom-player-wrapper:-webkit-full-screen .video-player-timeline__fill{background:#fff}
-.custom-player-wrapper:fullscreen .video-player-time{color:rgba(255,255,255,0.9)}
-.custom-player-wrapper:-webkit-full-screen .video-player-time{color:rgba(255,255,255,0.9)}
-.custom-player-wrapper:fullscreen .icon-btn{color:rgba(255,255,255,0.85);border-color:rgba(255,255,255,0.18)}
-.custom-player-wrapper:-webkit-full-screen .icon-btn{color:rgba(255,255,255,0.85);border-color:rgba(255,255,255,0.18)}
-.custom-player-wrapper:fullscreen .video-watermark{bottom:72px}
-.custom-player-wrapper:-webkit-full-screen .video-watermark{bottom:72px}
-.custom-player-wrapper:fullscreen .video-watermark-tiled{bottom:auto}
-.custom-player-wrapper:-webkit-full-screen .video-watermark-tiled{bottom:auto}
+.custom-player-wrapper:fullscreen .video-player-timeline__track,
+.custom-player-wrapper:-webkit-full-screen .video-player-timeline__track,
+.custom-player-wrapper:-moz-full-screen .video-player-timeline__track,
+.custom-player-wrapper:-ms-fullscreen .video-player-timeline__track{background:rgba(255,255,255,0.22)}
+.custom-player-wrapper:fullscreen .video-player-timeline__fill,
+.custom-player-wrapper:-webkit-full-screen .video-player-timeline__fill,
+.custom-player-wrapper:-moz-full-screen .video-player-timeline__fill,
+.custom-player-wrapper:-ms-fullscreen .video-player-timeline__fill{background:#fff}
+.custom-player-wrapper:fullscreen .video-player-time,
+.custom-player-wrapper:-webkit-full-screen .video-player-time,
+.custom-player-wrapper:-moz-full-screen .video-player-time,
+.custom-player-wrapper:-ms-fullscreen .video-player-time{color:rgba(255,255,255,0.9)}
+.custom-player-wrapper:fullscreen .icon-btn,
+.custom-player-wrapper:-webkit-full-screen .icon-btn,
+.custom-player-wrapper:-moz-full-screen .icon-btn,
+.custom-player-wrapper:-ms-fullscreen .icon-btn{color:rgba(255,255,255,0.85);border-color:rgba(255,255,255,0.18)}
+.custom-player-wrapper:fullscreen .video-watermark,
+.custom-player-wrapper:-webkit-full-screen .video-watermark,
+.custom-player-wrapper:-moz-full-screen .video-watermark,
+.custom-player-wrapper:-ms-fullscreen .video-watermark{bottom:72px}
+.custom-player-wrapper:fullscreen .video-watermark-tiled,
+.custom-player-wrapper:-webkit-full-screen .video-watermark-tiled,
+.custom-player-wrapper:-moz-full-screen .video-watermark-tiled,
+.custom-player-wrapper:-ms-fullscreen .video-watermark-tiled,
+.custom-player-wrapper:fullscreen .video-watermark-canvas,
+.custom-player-wrapper:-webkit-full-screen .video-watermark-canvas,
+.custom-player-wrapper:-moz-full-screen .video-watermark-canvas,
+.custom-player-wrapper:-ms-fullscreen .video-watermark-canvas{inset:0 !important;bottom:0 !important}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark-tiled,
-.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:0.03 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:0.03 !important;}
-@media(max-width:480px){
-  .video-watermark-tiled{grid-template-columns:1fr 1fr}
-  .video-watermark__tile:nth-child(n+6){display:none}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:0.09 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:0.07 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:0.09 !important;}
+/* fullscreen watermark — ensure tiled overlay stays INSIDE the element that is fullscreened (video-modal / stage)
+   Covers: #videoModal (JS requestFullscreen target), .video-modal, .video-modal-stage, #videoModalStage, with all vendor prefixes and ::backdrop */
+#videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
+.video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{
+  padding:0 !important;
+  background:#000;
 }
+#videoModal:fullscreen::backdrop,#videoModal:-webkit-full-screen::backdrop,.video-modal:fullscreen::backdrop,.video-modal:-webkit-full-screen::backdrop,
+.video-modal-stage:fullscreen::backdrop,.video-modal-stage:-webkit-full-screen::backdrop{background:#000;}
+#videoModal:fullscreen .video-watermark-tiled,
+#videoModal:-webkit-full-screen .video-watermark-tiled,
+#videoModal:-moz-full-screen .video-watermark-tiled,
+#videoModal:-ms-fullscreen .video-watermark-tiled,
+.video-modal:fullscreen .video-watermark-tiled,
+.video-modal:-webkit-full-screen .video-watermark-tiled,
+.video-modal:-moz-full-screen .video-watermark-tiled,
+.video-modal:-ms-fullscreen .video-watermark-tiled,
+#videoModalStage:fullscreen .video-watermark-tiled,
+#videoModalStage:-webkit-full-screen .video-watermark-tiled,
+#videoModalStage:-moz-full-screen .video-watermark-tiled,
+#videoModalStage:-ms-fullscreen .video-watermark-tiled,
+.video-modal-stage:fullscreen .video-watermark-tiled,
+.video-modal-stage:-webkit-full-screen .video-watermark-tiled,
+.video-modal-stage:-moz-full-screen .video-watermark-tiled,
+.video-modal-stage:-ms-fullscreen .video-watermark-tiled,
+#videoModal:fullscreen .video-watermark-canvas,
+#videoModal:-webkit-full-screen .video-watermark-canvas,
+#videoModal:-moz-full-screen .video-watermark-canvas,
+#videoModal:-ms-fullscreen .video-watermark-canvas,
+.video-modal:fullscreen .video-watermark-canvas,
+.video-modal:-webkit-full-screen .video-watermark-canvas,
+.video-modal:-moz-full-screen .video-watermark-canvas,
+.video-modal:-ms-fullscreen .video-watermark-canvas,
+.video-modal-stage:fullscreen .video-watermark-canvas,
+.video-modal-stage:-webkit-full-screen .video-watermark-canvas,
+.video-modal-stage:-moz-full-screen .video-watermark-canvas,
+.video-modal-stage:-ms-fullscreen .video-watermark-canvas{
+  inset:0 !important;
+  display:block !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  z-index:3 !important;
+  pointer-events:none !important;
+}
+/* scale tiles proportionally in fullscreen — clamp() ensures they stay inside video bounds */
+#videoModal:fullscreen .video-watermark__tile--center,
+#videoModal:-webkit-full-screen .video-watermark__tile--center,
+#videoModal:-moz-full-screen .video-watermark__tile--center,
+#videoModal:-ms-fullscreen .video-watermark__tile--center,
+.video-modal:fullscreen .video-watermark__tile--center,
+.video-modal:-webkit-full-screen .video-watermark__tile--center,
+.video-modal:-moz-full-screen .video-watermark__tile--center,
+.video-modal:-ms-fullscreen .video-watermark__tile--center,
+.video-modal-stage:fullscreen .video-watermark__tile--center,
+.video-modal-stage:-webkit-full-screen .video-watermark__tile--center,
+.video-modal-stage:-moz-full-screen .video-watermark__tile--center,
+.video-modal-stage:-ms-fullscreen .video-watermark__tile--center,
+#videoModalStage:fullscreen .video-watermark__tile--center,
+#videoModalStage:-webkit-full-screen .video-watermark__tile--center{
+  font-size:clamp(14px,2.2vw,26px) !important;
+  opacity:.10 !important;
+}
+#videoModal:fullscreen .video-watermark__tile:not(.video-watermark__tile--center),
+#videoModal:-webkit-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+#videoModal:-moz-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+#videoModal:-ms-fullscreen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal:fullscreen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal:-webkit-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal:-moz-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal:-ms-fullscreen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal-stage:fullscreen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal-stage:-webkit-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal-stage:-moz-full-screen .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal-stage:-ms-fullscreen .video-watermark__tile:not(.video-watermark__tile--center){
+  font-size:clamp(10px,1.4vw,14px) !important;
+  opacity:.07 !important;
+}
+/* ensure stage stays relative so absolute tiles are positioned against video bounds, not viewport */
+#videoModal:fullscreen .video-modal-stage,
+#videoModal:-webkit-full-screen .video-modal-stage,
+#videoModal:-moz-full-screen .video-modal-stage,
+#videoModal:-ms-fullscreen .video-modal-stage,
+.video-modal:fullscreen .video-modal-stage,
+.video-modal:-webkit-full-screen .video-modal-stage,
+.video-modal:-moz-full-screen .video-modal-stage,
+.video-modal:-ms-fullscreen .video-modal-stage{
+  position:relative !important;
+}
+/* also handle browser-native fullscreen on the stage itself (e.g. video element requestFullscreen) */
+.video-modal-stage:fullscreen,
+.video-modal-stage:-webkit-full-screen,
+.video-modal-stage:-moz-full-screen,
+.video-modal-stage:-ms-fullscreen,
+#videoModalStage:fullscreen,
+#videoModalStage:-webkit-full-screen,
+#videoModalStage:-moz-full-screen,
+#videoModalStage:-ms-fullscreen{
+  width:100vw !important;
+  height:100vh !important;
+  max-width:none !important;
+  background:#000 !important;
+}
+/* KEEP 9 tiles in fullscreen even on small screens — do not hide edge tiles */
+@media(max-width:480px){
+  #videoModal:fullscreen .video-watermark-tiled,
+  #videoModal:-webkit-full-screen .video-watermark-tiled,
+  .video-modal:fullscreen .video-watermark-tiled,
+  .video-modal:-webkit-full-screen .video-watermark-tiled,
+  .video-modal-stage:fullscreen .video-watermark-tiled{
+    display:block !important;
+  }
+  #videoModal:fullscreen .video-watermark__tile,
+  .video-modal:fullscreen .video-watermark__tile,
+  .video-modal-stage:fullscreen .video-watermark__tile{
+    display:block !important;
+  }
+}
+
+/* Thumb watermark on card - faint, per user request 'Thumbnails Too' */
+.video-card-thumb .thumb-watermark{position:absolute;right:6px;bottom:6px;z-index:2;pointer-events:none;user-select:none;color:rgba(255,255,255,0.85);font:700 7px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:lowercase;text-shadow:0 1px 3px rgba(0,0,0,.9);background:rgba(0,0,0,.55);padding:2px 5px;border-radius:4px;white-space:nowrap;max-width:88%;overflow:hidden;text-overflow:ellipsis;opacity:1}
+
+/* Video modal – triggered by thumbnail click (Thumbnail Grid Only + Modal Popup) */
+.video-modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:220;padding:20px}
+.video-modal.hidden{display:none !important}
+.video-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.video-modal-card{position:relative;z-index:1;width:90vw;max-width:960px;max-height:88vh;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.65)}
+.video-modal-close{position:absolute;top:10px;right:10px;z-index:3;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;cursor:pointer;backdrop-filter:blur(6px)}
+.video-modal-close:hover{background:rgba(0,0,0,0.85);border-color:rgba(255,255,255,0.25)}
+.video-modal-stage{position:relative;background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.video-modal-stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.video-modal-loader{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(0,0,0,0.62);color:#fff;font-size:.85rem;z-index:2}
+.video-modal-loader.hidden{display:none !important}
+.video-modal-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:videoSpin .8s linear infinite}
+.video-modal-info{padding:14px 16px;background:var(--surface);border-top:1px solid var(--line);flex-shrink:0}
+.video-modal-title{margin:0;font-size:.96rem;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.video-modal-meta{margin:4px 0 0;font-size:.82rem;color:var(--muted)}
+.video-modal .video-player-controls{background:var(--surface-2);border-top:1px solid var(--line);padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
+/* #videoModal is the element JS fullscreenes — must fill viewport in all vendor prefixes; ::backdrop ensures black behind */
+#videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
+.video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0;border:0;background:#000;padding:0;display:flex;flex-direction:column}
+#videoModal:fullscreen::backdrop,#videoModal:-webkit-full-screen::backdrop,.video-modal:fullscreen::backdrop,.video-modal:-webkit-full-screen::backdrop{background:#000;}
+#videoModal:fullscreen .video-modal-card,#videoModal:-webkit-full-screen .video-modal-card,#videoModal:-moz-full-screen .video-modal-card,#videoModal:-ms-fullscreen .video-modal-card,
+.video-modal:fullscreen .video-modal-card,.video-modal:-webkit-full-screen .video-modal-card,.video-modal:-moz-full-screen .video-modal-card,.video-modal:-ms-fullscreen .video-modal-card{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0;border:0;background:#000;display:flex;flex-direction:column}
+#videoModal:fullscreen .video-modal-stage,#videoModal:-webkit-full-screen .video-modal-stage,#videoModal:-moz-full-screen .video-modal-stage,#videoModal:-ms-fullscreen .video-modal-stage,
+.video-modal:fullscreen .video-modal-stage,.video-modal:-webkit-full-screen .video-modal-stage,.video-modal:-moz-full-screen .video-modal-stage,.video-modal:-ms-fullscreen .video-modal-stage{flex:1;aspect-ratio:unset;height:auto;min-height:0}
+@media(max-width:768px){.video-modal{padding:12px}.video-modal-card{width:96vw;max-height:92vh}.video-modal-stage{aspect-ratio:16/10}}
 
 .upload{display:inline-block;margin-top:12px;background:var(--surface);padding:8px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--line)}
 .upload input{display:none}
@@ -1295,7 +1490,30 @@ body::before{
   color:var(--muted);
   letter-spacing:.02em;
 }
-/* poster placeholder (used when no thumbnail OR thumbnail 404s) */
+.video-card-subtitle{
+  font-size:.78rem;
+  color:var(--muted);
+  letter-spacing:.02em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.video-thumb-fallback{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#0a0a0c;
+  color:var(--muted);
+  border-radius:inherit;
+}
+.video-thumb-fallback svg{
+  width:42px;
+  height:42px;
+  opacity:0.55;
+}
+/* poster placeholder (used when no thumbnail OR thumbnail 404s — legacy, now shows icon via .video-thumb-fallback) */
 .video-poster-placeholder{
   position:relative;
   width:100%;
@@ -1387,16 +1605,21 @@ body::before{
   .custom-player-wrapper{animation:none}
 }
 
-/* === STRONGER FRONTEND WATERMARK TILES === */
-/* The server-side baked watermark is being removed for new uploads, but existing
-   videos may still have it in their frames. Make the front-end tiles more visible
-   so the per-user `drafted.world | @<viewer>` reads over the baked one. */
-.video-watermark__tile{
-  color:#fff;
-  font:700 .78rem/1.2 system-ui,-apple-system,sans-serif;
-  letter-spacing:.06em;
-  text-transform:lowercase;
-  text-shadow:0 1px 2px #000, 0 0 6px rgba(0,0,0,.8);
-  opacity:.18;
-}
-.video-watermark-tiled{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+/* === FRONTEND WATERMARK VISIBILITY — keep 0.10 center / 0.07 others, faint but readable; when burned cache HIT, reduce overlay to 0.06/0.04 so combined with 0.07-0.10 burned stays subtle and not obscuring === */
+.video-watermark__tile--center{opacity:.10 !important;}
+.video-watermark__tile:not(.video-watermark__tile--center){opacity:.07 !important;}
+/* when personalized burned already handled, keep overlay faint but still readable (0.06/0.04) — not 0.03 invisible */
+.video-modal[data-watermark="burned"] .video-watermark__tile--center,
+.video-modal-stage[data-watermark="burned"] .video-watermark__tile--center,
+#videoModal[data-watermark="burned"] .video-watermark__tile--center,
+#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:0.06 !important;}
+.video-modal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal-stage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
+#videoModal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
+#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:0.04 !important;}
+/* fullscreen must preserve 9 tiles visibility — override burned dimming to keep readable in fullscreen */
+#videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile--center,
+#videoModal:-webkit-full-screen[data-watermark="burned"] .video-watermark__tile--center,
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:0.08 !important;}
+#videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:0.05 !important;}
