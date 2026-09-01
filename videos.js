@@ -1,4 +1,3 @@
-/* videos.js — drafted.world hardened forensic watermark + personalized burn polling */
 const VIDEO_SECTIONS = {
 	"Day 1": ["Amd", "Orderblocks", "OHLC", "OLHC"],
 	"Day 2": ["Daily bias", "Key opens", "SMT Divergence"],
@@ -173,7 +172,6 @@ async function loadVideos(){
 	// expose for testing
 	try{ if(typeof window !== 'undefined'){ window.VIDEO_SECTIONS = VIDEO_SECTIONS; window.getFilteredVideos = getFilteredVideos; } }catch(e){}
 
-	/* ---- hardened watermark helpers ---- */
 	function escapeHtml(s){
 		return String(s).replace(/[&<>"']/g, function(c){
 			return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
@@ -198,17 +196,16 @@ async function loadVideos(){
 		wrap.className = 'video-watermark-tiled';
 		wrap.setAttribute('aria-hidden','true');
 		wrap.style.pointerEvents = 'none';
-		// 9 tiles: center + 4 corners (20px margin) + 4 edge centers — matches ffmpeg 9 drawtext burned layer
 		const positions = [
-			'center', // 0: center 36 @0.10
-			'tl',     // 1: top-left 20,20 @0.07
-			'tr',     // 2: top-right w-tw-20,20 @0.07
-			'bl',     // 3: bottom-left 20,h-th-20 @0.07
-			'br',     // 4: bottom-right w-tw-20,h-th-20 @0.07
-			'tc',     // 5: top-center (w-text_w)/2,20 @0.07
-			'bc',     // 6: bottom-center (w-text_w)/2,h-th-20 @0.07
-			'ml',     // 7: middle-left 20,(h-text_h)/2 @0.07
-			'mr'      // 8: middle-right w-tw-20,(h-text_h)/2 @0.07
+			'center',
+			'tl',
+			'tr',
+			'bl',
+			'br',
+			'tc',
+			'bc',
+			'ml',
+			'mr'
 		];
 		for(let i=0;i<9;i++){
 			const span = document.createElement('span');
@@ -240,7 +237,6 @@ async function loadVideos(){
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 			ctx.save();
 			ctx.scale(dpr, dpr);
-			// 9 tiles: center + 4 corners (20px margin) + 4 edge-centers — matches ffmpeg 9 drawtext (center 36@0.10, others 20@0.07)
 			const margin = 20;
 			const tiles = [
 				{ x: rect.width*0.5, y: rect.height*0.5, align:'center', baseline:'middle', font:'700 15px system-ui, -apple-system, sans-serif', alpha:0.10 },
@@ -295,7 +291,6 @@ async function loadVideos(){
 			if(ro) try{ ro.disconnect(); }catch(e){}
 			window.removeEventListener('resize', resize);
 		};
-		// redraw occasionally to jitter canvas like DOM
 		let jitterIv = setInterval(draw, 4000 + Math.random()*2000);
 		canvas._wmJitterCleanup = function(){ clearInterval(jitterIv); };
 		document.addEventListener('visibilitychange', function vis(){
@@ -308,8 +303,6 @@ async function loadVideos(){
 		if(!wrapper || !el) return function(){};
 		el.style.pointerEvents = 'none';
 		el.style.userSelect = 'none';
-		// shadow DOM option commented but not enabled (closed shadow breaks poll).
-		// try{ const sh = wrapper.attachShadow({mode:'closed'}); sh.appendChild(el); }catch(e){}
 		let restoring = false;
 		function check(){
 			if(restoring) return;
@@ -351,7 +344,6 @@ async function loadVideos(){
 			mo.observe(wrapper, {childList:true, subtree:false, attributes:true, attributeFilter:['style','class','hidden']});
 			mo.observe(el, {attributes:true, attributeFilter:['style','class','hidden']});
 		}catch(e){}
-		// also watch removal via subtree changes
 		let mo2 = null;
 		try{
 			mo2 = new MutationObserver(function(){ if(!el.isConnected) check(); });
@@ -414,7 +406,6 @@ async function loadVideos(){
 		}
 	}catch(e){}
 
-	/* ---- personalized manifest polling helper ---- */
 	function parseSignedParams(videoUrl){
 		try{
 			const u = new URL(String(videoUrl), location.origin);
@@ -451,7 +442,7 @@ async function loadVideos(){
 		let attempt = 0;
 		const startMs = Date.now();
 		const MAX_MS = 90000;
-		const ALLOW_GENERIC_FALLBACK = true; // matches backend hotfix: generic MP4 is always served while personalized burn queues
+		const ALLOW_GENERIC_FALLBACK = true;
 		function ensureNotice(queueLabel){
 			if(notice && notice.isConnected) return notice;
 			notice = document.createElement('div');
@@ -462,7 +453,7 @@ async function loadVideos(){
 			// Build notice via DOM APIs — no innerHTML with user data (XSS hardening)
 			const badge = document.createElement('div');
 			badge.className = 'personalizing-notice__badge';
-			badge.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Upgrading to forensic copy in background';
+			badge.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Preparing your copy';
 			const sub = document.createElement('div');
 			sub.className = 'personalizing-notice__sub';
 			sub.textContent = 'drafted.world | @' + clean + ' ';
@@ -485,7 +476,6 @@ async function loadVideos(){
 			notice.appendChild(bar);
 			notice.appendChild(cd2);
 			stage.appendChild(notice);
-			// non-blocking info only — never pause playback; generic plays with tiled watermark
 			return notice;
 		}
 		function updateNoticeProgress(queueLabel){
@@ -544,9 +534,7 @@ async function loadVideos(){
 					let data = null;
 					try{ data = await res.json(); }catch(e){}
 					const isHit = cacheHeader === 'HIT' || watermarkHeader === 'burned' || (data && Array.isArray(data.segments) && data.segments.length>0);
-					// Graceful: only swap to burned when HIT is confirmed. A 200 without HIT
-					// (e.g. headers missing) is treated as pending — keep generic playing.
-					if(!isHit){
+				if(!isHit){
 						// Still pending — update non-blocking notice but DO NOT change src
 						const label = '~' + Math.max(5, Math.ceil((MAX_MS - (Date.now()-startMs))/1000)) + 's';
 						ensureNotice(label);
@@ -595,21 +583,17 @@ async function loadVideos(){
 				}
 				// 401/403/404 etc -> treat as fallback to generic (remove notice if any)
 				if(notice && notice.isConnected){
-					// if 403/404 on manifest, likely not personalized yet or no access; keep generic playable
-					notice.remove();
+				notice.remove();
 				}
 			}catch(e){
-				// network error -> retry
-				if(notice && notice.isConnected) updateNoticeProgress(null);
+			if(notice && notice.isConnected) updateNoticeProgress(null);
 				const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
 				pollTimer = setTimeout(poll, delay);
 				return;
 			}
-			// non-202 non-OK (e.g. 500) -> retry with backoff unless cancelled
 			const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
 			pollTimer = setTimeout(poll, delay);
 		}
-		// kickoff (fire and forget)
 		poll();
 		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
 	}
@@ -835,8 +819,7 @@ async function loadVideos(){
 			}catch(e){}
 		}
 		filteredVideos.forEach(function(video, videoIdx){
-			let viewerName = video.viewer || cachedWhoamiViewer || '';
-			console.log('[watermark] viewer', viewerName, 'video', video.id);
+		let viewerName = video.viewer || cachedWhoamiViewer || '';
 			if(!viewerName || !String(viewerName).trim()){
 				if(cachedWhoamiViewer) viewerName = cachedWhoamiViewer;
 			}
@@ -848,11 +831,9 @@ async function loadVideos(){
 					let v2 = (u2 && (u2.displayName || u2.username || u2.discordName || u2.discord || u2.name || u2.viewer)) || d.viewer || d.displayName || '';
 					if(v2){
 						const clean2 = sanitizeViewer(v2);
-						// update watermark tiles already in DOM if any
-						try{
-							const tiles = document.querySelectorAll('.video-watermark__tile');
-							// last resort: patch current video's watermark if still generic
-							if(!String(viewerName).trim()) viewerName = clean2;
+					try{
+						const tiles = document.querySelectorAll('.video-watermark__tile');
+						if(!String(viewerName).trim()) viewerName = clean2;
 						}catch(e){}
 					}
 				}).catch(function(){});
@@ -900,8 +881,7 @@ async function loadVideos(){
 			playBadge.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 			playBadge.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:rgba(10,10,12,0.65);color:#fff;backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,0.12);box-shadow:0 6px 18px rgba(0,0,0,0.4);opacity:.85;';
 			thumbBtn.appendChild(playBadge);
-			// thumb watermark – faint per Thumbnails Too
-			try{
+		try{
 				const cleanThumb = sanitizeViewer(viewerName) || 'viewer';
 				const thumbWM = document.createElement('span');
 				thumbWM.className = 'thumb-watermark';
@@ -970,7 +950,6 @@ async function loadVideos(){
                 });
             })(video, videoIdx);
         });
-        // --- Modal helpers (single instance, watermark + controls + personalized poll) ---
         // Ensure modal DOM exists (injected in videos.html)
         (function setupVideoModal(){
             const modal = document.getElementById('videoModal');
@@ -989,14 +968,13 @@ async function loadVideos(){
                 modal.classList.add('hidden');
                 document.body.style.overflow = '';
                 try{ player.pause(); }catch(e){}
-                // cleanup watermark/poll
-                try{ if(modal._unharden) modal._unharden(); modal._unharden=null; }catch(e){}
+            try{ if(modal._unharden) modal._unharden(); modal._unharden=null; }catch(e){}
                 try{ if(modal._stopJitter) modal._stopJitter(); modal._stopJitter=null; }catch(e){}
                 try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); modal._unhardenCanvas=null; }catch(e){}
                 try{ if(modal._wmCleanup) modal._wmCleanup(); modal._wmCleanup=null; }catch(e){}
                 try{ if(modal._cancelPoll) modal._cancelPoll(); modal._cancelPoll=null; }catch(e){}
-                try{ // remove watermarks
-                    stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); });
+            try{
+                stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); });
                 }catch(e){}
             }
             window._closeVideoModal = closeModal;
@@ -1075,7 +1053,6 @@ async function loadVideos(){
             }
             try{ player.load(); }catch(e){}
             if(loader) loader.classList.remove('hidden');
-            // watermark – 9 tiles every corner/side/center
             try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
             // cleanup previous
             try{ if(modal._unharden) modal._unharden(); }catch(e){}
@@ -1090,7 +1067,6 @@ async function loadVideos(){
             } else {
                 try{ watermark = createWatermark(viewerName); stage.appendChild(watermark); modal._unharden = hardenWatermark(stage, watermark); modal._stopJitter = jitterWatermark(watermark, player); }catch(e){}
             }
-            // personalized poll (non-blocking)
             try{
                 if(!video.personalizedUrl){
                     modal._cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: stage, viewer: viewerName});
@@ -1290,7 +1266,6 @@ async function loadVideos(){
                             else if(document.msExitFullscreen) document.msExitFullscreen();
                         }
                     });
-                    // delegate double-click on video/stage to wrapper fullscreen (so watermark stays inside fullscreen element)
                     try{
                         const stageEl = document.getElementById('videoModalStage');
                         const modalEl2 = document.getElementById('videoModal');
@@ -1310,8 +1285,7 @@ async function loadVideos(){
                         }
                         if(stageEl) stageEl.addEventListener('dblclick', function(e){ e.preventDefault(); toggleWrapperFs(); });
                         if(player) player.addEventListener('dblclick', function(e){ e.preventDefault(); e.stopPropagation(); toggleWrapperFs(); });
-                        // keep watermark visible on fullscreenchange and on pause (viewer name must stay visible including pause/fullscreen)
-                        function ensureWatermarkVisible(){
+                    function ensureWatermarkVisible(){
                             try{
                                 const wm = stageEl ? stageEl.querySelector('.video-watermark-tiled,.video-watermark-canvas') : null;
                                 if(wm){

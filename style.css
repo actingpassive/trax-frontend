@@ -246,7 +246,6 @@ body::before{
   display:flex;
   flex-direction:column;
 }
-/* legacy single tile — kept as alias, hidden when tiled exists */
 .video-watermark{
   position:absolute;
   right:14px;
@@ -260,14 +259,11 @@ body::before{
   text-shadow:0 1px 3px #000;
   user-select:none;
 }
-/* hardened tiled forensic watermark — 9 tiles: center + 4 corners + 4 edge-centers (matches ffmpeg 9 drawtext)
-   FIX: overlay is INSIDE the element that goes fullscreen (#videoModal / .video-modal-stage) using absolute inset
-   with clamp()/vw so it scales proportionally and never clips at top. All 9 tiles kept scaled (not reduced on mobile). */
 .video-watermark-tiled{
   position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;mix-blend-mode:normal;overflow:hidden;
   display:block;
   box-sizing:border-box;
-  padding:clamp(8px,1.2vw,16px); /* inner padding ensures edge tiles stay INSIDE video bounds even when letterboxed */
+  padding:clamp(8px,1.2vw,16px);
 }
 .video-watermark__tile{
   position:absolute;
@@ -286,7 +282,6 @@ body::before{
   pointer-events:none;
   box-sizing:border-box;
 }
-/* center is larger and 0.10, edges 0.07 — faint but readable, not obscuring even when combined with burned */
 .video-watermark__tile--center{
   left:50%;top:50%;
   transform:translate(-50%,-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));
@@ -306,7 +301,6 @@ body::before{
   position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:3;
   display:block;
 }
-/* thumbnail watermark — shows same drafted.world | @viewer as video but scaled down */
 .thumb-watermark{
   position:absolute;
   right:4px;
@@ -560,7 +554,6 @@ body::before{
   border-bottom:0;
   border-top:0;
 }
-/* watermark must not affect flex sizing — absolute overlay only, stays INSIDE wrapper that goes fullscreen */
 .video-watermark-tiled,
 .video-watermark-canvas{
   position:absolute !important;
@@ -706,8 +699,6 @@ body::before{
 .custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.90 !important;}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.90 !important;}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
-/* fullscreen watermark — ensure tiled overlay stays INSIDE the element that is fullscreened (video-modal / stage)
-   Covers: #videoModal (JS requestFullscreen target), .video-modal, .video-modal-stage, #videoModalStage, with all vendor prefixes and ::backdrop */
 #videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
 .video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{
   padding:0 !important;
@@ -750,7 +741,6 @@ body::before{
   z-index:3 !important;
   pointer-events:none !important;
 }
-/* scale tiles proportionally in fullscreen — clamp() ensures they stay inside video bounds */
 #videoModal:fullscreen .video-watermark__tile--center,
 #videoModal:-webkit-full-screen .video-watermark__tile--center,
 #videoModal:-moz-full-screen .video-watermark__tile--center,
@@ -783,7 +773,6 @@ body::before{
   font-size:clamp(10px,1.4vw,14px) !important;
   opacity:.07 !important;
 }
-/* ensure stage stays relative so absolute tiles are positioned against video bounds, not viewport */
 #videoModal:fullscreen .video-modal-stage,
 #videoModal:-webkit-full-screen .video-modal-stage,
 #videoModal:-moz-full-screen .video-modal-stage,
@@ -794,7 +783,6 @@ body::before{
 .video-modal:-ms-fullscreen .video-modal-stage{
   position:relative !important;
 }
-/* also handle browser-native fullscreen on the stage itself (e.g. video element requestFullscreen) */
 .video-modal-stage:fullscreen,
 .video-modal-stage:-webkit-full-screen,
 .video-modal-stage:-moz-full-screen,
@@ -808,7 +796,6 @@ body::before{
   max-width:none !important;
   background:#000 !important;
 }
-/* KEEP 9 tiles in fullscreen even on small screens — do not hide edge tiles */
 @media(max-width:480px){
   #videoModal:fullscreen .video-watermark-tiled,
   #videoModal:-webkit-full-screen .video-watermark-tiled,
@@ -824,7 +811,6 @@ body::before{
   }
 }
 
-/* Thumb watermark on card - faint, per user request 'Thumbnails Too' */
 .video-card-thumb .thumb-watermark{position:absolute;right:6px;bottom:6px;z-index:2;pointer-events:none;user-select:none;color:rgba(255,255,255,0.85);font:700 7px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:lowercase;text-shadow:0 1px 3px rgba(0,0,0,.9);background:rgba(0,0,0,.55);padding:2px 5px;border-radius:4px;white-space:nowrap;max-width:88%;overflow:hidden;text-overflow:ellipsis;opacity:1}
 
 /* Video modal – triggered by thumbnail click (Thumbnail Grid Only + Modal Popup) */
@@ -1581,8 +1567,6 @@ body::before{
    still reads as a poster, not as a black hole. Custom JS already sets player.poster
    to the SVG data URL when no thumbnail is available. */
 .video-player-stage{background:#0a0a0c}
-/* the personalized front-end watermark already shows `drafted.world | @<viewer>`
-   on top of the player. No server-side bake should ever show. */
 @media (prefers-reduced-motion:reduce){
   .video-card-thumb{transition:none}
   .video-card-thumb:hover{transform:none}
@@ -1612,10 +1596,8 @@ body::before{
   .custom-player-wrapper{animation:none}
 }
 
-/* === FRONTEND WATERMARK VISIBILITY — 0.90 opacity for all tiles === */
 .video-watermark__tile--center{opacity:.90 !important;}
 .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
-/* when personalized burned already handled */
 .video-modal[data-watermark="burned"] .video-watermark__tile--center,
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal[data-watermark="burned"] .video-watermark__tile--center,
@@ -1624,7 +1606,6 @@ body::before{
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 #videoModal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 #videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
-/* fullscreen must preserve 9 tiles visibility */
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal:-webkit-full-screen[data-watermark="burned"] .video-watermark__tile--center,
 .video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}

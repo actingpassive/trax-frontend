@@ -1,4 +1,3 @@
-// frontend/config.js — single source for backend URL (allowlisted + hardened)
 const API_BASE = (() => {
   const ALLOWED_ORIGINS = new Set([
     'https://drafted.world',
