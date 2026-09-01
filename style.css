@@ -572,19 +572,11 @@ body::before{
 .card{padding:14px;border-radius:6px;background:var(--surface);color:var(--muted)}
 
 /* thumbnail grid — responsive 3/2/1 columns */
-#videoGrid{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:20px;
-  padding:0;
-  max-height:none;
-  background:transparent;
-  border:0;
-}
+#videoGrid,
 #videoGrid.video-list--grid,
 .video-list--grid{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
+  display:grid !important;
+  grid-template-columns:repeat(3, 1fr) !important;
   gap:20px;
   padding:0;
   max-height:none;
