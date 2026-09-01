@@ -291,16 +291,16 @@ body::before{
   left:50%;top:50%;
   transform:translate(-50%,-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));
   font-size:clamp(12px,1.6vw,18px);
-  opacity:.10;
+  opacity:.90;
 }
-.video-watermark__tile--tl{left:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--tr{right:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);left:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--bl{left:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--br{right:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);left:auto;top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--tc{left:50%;top:clamp(12px,1.8vw,22px);transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--bc{left:50%;bottom:clamp(12px,1.8vw,22px);top:auto;transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--ml{left:clamp(12px,1.8vw,22px);top:50%;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
-.video-watermark__tile--mr{right:clamp(12px,1.8vw,22px);top:50%;left:auto;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.07;}
+.video-watermark__tile--tl{left:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--tr{right:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);left:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--bl{left:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--br{right:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);left:auto;top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--tc{left:50%;top:clamp(12px,1.8vw,22px);transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--bc{left:50%;bottom:clamp(12px,1.8vw,22px);top:auto;transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--ml{left:clamp(12px,1.8vw,22px);top:50%;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--mr{right:clamp(12px,1.8vw,22px);top:50%;left:auto;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
 @keyframes wm-drift{from{transform:rotate(var(--r,0deg)) translate(-8px,-6px) translate(var(--dx,0),var(--dy,0))} to{transform:rotate(var(--r,0deg)) translate(8px,6px) translate(var(--dx,0),var(--dy,0))}}
 .video-watermark-canvas{
   position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:3;
@@ -703,9 +703,9 @@ body::before{
 .custom-player-wrapper:-moz-full-screen .video-watermark-canvas,
 .custom-player-wrapper:-ms-fullscreen .video-watermark-canvas{inset:0 !important;bottom:0 !important}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark-tiled,
-.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:0.09 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:0.07 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:0.09 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.90 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.90 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
 /* fullscreen watermark — ensure tiled overlay stays INSIDE the element that is fullscreened (video-modal / stage)
    Covers: #videoModal (JS requestFullscreen target), .video-modal, .video-modal-stage, #videoModalStage, with all vendor prefixes and ::backdrop */
 #videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
@@ -1612,21 +1612,21 @@ body::before{
   .custom-player-wrapper{animation:none}
 }
 
-/* === FRONTEND WATERMARK VISIBILITY — keep 0.10 center / 0.07 others, faint but readable; when burned cache HIT, reduce overlay to 0.06/0.04 so combined with 0.07-0.10 burned stays subtle and not obscuring === */
-.video-watermark__tile--center{opacity:.10 !important;}
-.video-watermark__tile:not(.video-watermark__tile--center){opacity:.07 !important;}
-/* when personalized burned already handled, keep overlay faint but still readable (0.06/0.04) — not 0.03 invisible */
+/* === FRONTEND WATERMARK VISIBILITY — 0.90 opacity for all tiles === */
+.video-watermark__tile--center{opacity:.90 !important;}
+.video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
+/* when personalized burned already handled */
 .video-modal[data-watermark="burned"] .video-watermark__tile--center,
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal[data-watermark="burned"] .video-watermark__tile--center,
-#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:0.06 !important;}
+#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
 .video-modal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 #videoModal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:0.04 !important;}
-/* fullscreen must preserve 9 tiles visibility — override burned dimming to keep readable in fullscreen */
+#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
+/* fullscreen must preserve 9 tiles visibility */
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal:-webkit-full-screen[data-watermark="burned"] .video-watermark__tile--center,
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:0.08 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:0.05 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
