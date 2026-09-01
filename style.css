@@ -532,7 +532,7 @@ body::before{
 /* gallery grid – list vs grid toggle */
 .video-list--grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
   gap:16px;
   padding:0;
   max-height:none;
@@ -550,13 +550,13 @@ body::before{
   gap:0;
   margin-bottom:0;
 }
-.video-list--grid .video-section > div[style*="display:flex"]{
+.video-list--grid .video-card-header{
   padding:12px !important;
+  gap:10px !important;
 }
-.video-list--grid .video-section h3,
-.video-list--grid .video-section > div[style*="display:flex"] h3{
+.video-list--grid .video-card-title{
   padding:0 !important;
-  font-size:1.1rem !important;
+  font-size:1.05rem !important;
   white-space:normal !important;
   display:-webkit-box !important;
   -webkit-line-clamp:2 !important;
@@ -1371,3 +1371,32 @@ body::before{
   .video-card-title{font-size:1.1rem;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
 /* === END VIDEO CARD REDESIGN === */
+
+/* === COLLAPSED / EXPANDED PLAYER (card shows thumbnail by default; expands on play) === */
+.custom-player-wrapper.is-collapsed{
+  display:none;
+}
+.custom-player-wrapper{
+  animation:playerExpand .24s ease-out both;
+}
+@keyframes playerExpand{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@media (prefers-reduced-motion:reduce){
+  .custom-player-wrapper{animation:none}
+}
+
+/* === STRONGER FRONTEND WATERMARK TILES === */
+/* The server-side baked watermark is being removed for new uploads, but existing
+   videos may still have it in their frames. Make the front-end tiles more visible
+   so the per-user `drafted.world | @<viewer>` reads over the baked one. */
+.video-watermark__tile{
+  color:#fff;
+  font:700 .78rem/1.2 system-ui,-apple-system,sans-serif;
+  letter-spacing:.06em;
+  text-transform:lowercase;
+  text-shadow:0 1px 2px #000, 0 0 6px rgba(0,0,0,.8);
+  opacity:.18;
+}
+.video-watermark-tiled{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}

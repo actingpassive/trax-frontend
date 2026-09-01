@@ -977,7 +977,7 @@ async function loadVideos(){
 			titleRow.appendChild(metaRow);
 
 			const wrapper = document.createElement('div');
-			wrapper.className = 'custom-player-wrapper';
+			wrapper.className = 'custom-player-wrapper is-collapsed';
 			wrapper.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 			wrapper.addEventListener('dragstart', function(e){ e.preventDefault(); });
 
@@ -1168,7 +1168,10 @@ async function loadVideos(){
 						const cur = (pct / 100) * dur;
 						syncTimeLabels(cur, dur);
 					}else{
+						// No duration yet because preload="none". Trigger metadata load
+						// and remember the target so we seek as soon as it's available.
 						pendingSeekPct = pct;
+						preloadMeta();
 						syncTimeLabels(0, 0);
 					}
 				}
@@ -1226,6 +1229,7 @@ async function loadVideos(){
 				// toggle play — always allowed; notice is non-blocking info when ALLOW_GENERIC_FALLBACK=true
 				function togglePlay(){
 					preloadMeta();
+					wrapper.classList.remove('is-collapsed');
 					if(player.paused) player.play().catch(function(){});
 					else player.pause();
 				}
@@ -1235,6 +1239,11 @@ async function loadVideos(){
 				// Card thumbnail click also toggles play (delegated from outer header)
 				const cardThumbBtn = section.querySelector('.video-card-thumb');
 				if(cardThumbBtn) cardThumbBtn.addEventListener('click', togglePlay);
+				// When video ends, collapse back to thumbnail so the card returns to a calm state.
+				player.addEventListener('ended', function(){
+					wrapper.classList.add('is-collapsed');
+					try{ player.currentTime = 0; }catch(e){}
+				});
 				player.addEventListener('play', function(){
 					updatePlayIcon(true);
 					bigPlayBtn.style.display = 'none';
