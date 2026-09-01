@@ -505,36 +505,7 @@ body::before{
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-/* header injected by videos.js via inline style="display:flex..." — override to 16px card header */
-.video-section > div[style*="display:flex"]{
-  display:flex !important;
-  align-items:center !important;
-  gap:12px !important;
-  padding:16px !important;
-  margin:0 !important;
-  min-width:0;
-  background:var(--surface);
-  border-bottom:1px solid var(--line);
-}
-.video-section > div[style*="display:flex"] > div:first-child{
-  width:80px !important;
-  height:45px !important;
-  flex-shrink:0 !important;
-  border-radius:4px !important;
-}
-.video-section > div[style*="display:flex"] > div:nth-child(2){
-  flex:1 !important;
-  min-width:0 !important;
-  display:flex !important;
-  flex-direction:column !important;
-  gap:2px !important;
-}
-.video-section > div[style*="display:flex"] h3{
-  font-size:clamp(1.2rem, 4vw, 1.6rem) !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
-}
+/* legacy .section — kept for non-video pages; video cards use .video-section below with isolated card model */
 /* named-class fallback if JS later adds .titleRow/.thumbWrap */
 .video-section .titleRow{padding:16px;display:flex;align-items:center;gap:12px;min-width:0;border-bottom:1px solid var(--line)}
 .video-section .thumbWrap{width:80px;height:45px;flex-shrink:0;border-radius:4px;overflow:hidden}
@@ -1205,3 +1176,198 @@ body::before{
   .video-hero__play:hover{transform:none}
 }
 /* === END VIDEOS PAGE REDESIGN (worker A) === */
+
+/* === VIDEO CARD REDESIGN (card markup from videos.js: .video-card-header / .video-card-thumb / .video-card-meta) === */
+.video-card-header{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:18px 18px 16px;
+  min-width:0;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.video-card-thumb{
+  position:relative;
+  display:block;
+  width:100%;
+  aspect-ratio:16/9;
+  padding:0;
+  border:0;
+  background:#0a0a0c;
+  cursor:pointer;
+  overflow:hidden;
+  border-radius:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+  transition:transform .2s, box-shadow .2s;
+}
+.video-card-thumb:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 24px rgba(0,0,0,.45);
+}
+.video-card-thumb:focus-visible{
+  outline:2px solid var(--accent-soft);
+  outline-offset:3px;
+}
+.video-card-thumb__poster{position:absolute;inset:0}
+.video-card-thumb__poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.video-card-thumb__duration{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:3px 8px;
+  font:600 12px/1.2 "Trebuchet MS",Verdana,sans-serif;
+  color:#fff;
+  background:rgba(10,10,12,.78);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;
+  letter-spacing:.04em;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.video-card-thumb__play{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  background:rgba(10,10,12,.62);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 6px 18px rgba(0,0,0,.4);
+  opacity:.85;
+  transition:opacity .2s, transform .2s, background .2s;
+  pointer-events:none;
+}
+.video-card-thumb:hover .video-card-thumb__play{
+  opacity:1;
+  background:rgba(118,86,184,.85);
+  transform:translate(-50%,-50%) scale(1.06);
+}
+.video-card-meta{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  min-width:0;
+}
+.day-chip{
+  display:inline-flex;
+  align-items:center;
+  height:24px;
+  padding:0 11px;
+  border-radius:999px;
+  font:700 .7rem/1 "Trebuchet MS",Verdana,sans-serif;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  flex-shrink:0;
+}
+.day-chip--outline{
+  border:1px solid var(--accent);
+  color:var(--accent-soft);
+  background:rgba(118,86,184,.08);
+}
+.video-card-text{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.video-card-title{
+  margin:0;
+  font-family:Georgia,serif;
+  font-weight:400;
+  font-size:clamp(1.15rem,2.6vw,1.55rem);
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-width:0;
+}
+.video-card-date{
+  font-size:.82rem;
+  color:var(--muted);
+  letter-spacing:.02em;
+}
+/* poster placeholder (used when no thumbnail OR thumbnail 404s) */
+.video-poster-placeholder{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:linear-gradient(180deg,#1a1a22 0%,#0a0a0c 100%);
+  overflow:hidden;
+  border-radius:inherit;
+}
+.video-poster-placeholder__glow{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 85% 15%, rgba(118,86,184,.22) 0%, rgba(118,86,184,0) 60%);
+  pointer-events:none;
+}
+.video-poster-placeholder__topic{
+  position:absolute;
+  left:50%;
+  top:42%;
+  transform:translate(-50%,-50%);
+  font-family:Georgia,serif;
+  font-size:clamp(20px,4vw,36px);
+  color:#fff;
+  opacity:.28;
+  text-align:center;
+  max-width:80%;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.video-poster-placeholder__brand{
+  position:absolute;
+  left:50%;
+  top:60%;
+  transform:translate(-50%,-50%);
+  font-family:"Trebuchet MS",Verdana,sans-serif;
+  font-size:13px;
+  color:#9a9aa8;
+  letter-spacing:.18em;
+  text-transform:lowercase;
+  opacity:.9;
+}
+.video-poster-placeholder__day{
+  position:absolute;
+  left:50%;
+  top:74%;
+  display:inline-block;
+  padding:5px 14px;
+  border:1px solid rgba(118,86,184,.65);
+  color:#b8a7e0;
+  font:600 12px/1.2 "Trebuchet MS",Verdana,sans-serif;
+  border-radius:999px;
+  letter-spacing:.04em;
+  background:transparent;
+  transform:translate(-50%,-50%);
+}
+/* video player stage — keep dark frame before first decoded frame so the poster
+   still reads as a poster, not as a black hole. Custom JS already sets player.poster
+   to the SVG data URL when no thumbnail is available. */
+.video-player-stage{background:#0a0a0c}
+/* the personalized front-end watermark already shows `drafted.world | @<viewer>`
+   on top of the player. No server-side bake should ever show. */
+@media (prefers-reduced-motion:reduce){
+  .video-card-thumb{transition:none}
+  .video-card-thumb:hover{transform:none}
+  .video-card-thumb__play{transition:none}
+  .video-card-thumb:hover .video-card-thumb__play{transform:translate(-50%,-50%) scale(1.04)}
+}
+@media (max-width:560px){
+  .video-card-header{padding:14px 14px 12px;gap:10px}
+  .video-card-thumb{border-radius:8px}
+  .video-card-thumb__play{width:48px;height:48px}
+  .video-card-title{font-size:1.1rem;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
+/* === END VIDEO CARD REDESIGN === */

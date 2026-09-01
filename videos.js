@@ -987,7 +987,11 @@ async function loadVideos(){
 
 			const player = document.createElement('video');
 			player.className = 'video-player custom-video';
-			player.preload = 'metadata';
+			// preload="none" so the browser doesn't decode the first frame until the
+			// user explicitly clicks play. The poster (set just below) is what shows
+			// before play, which keeps broken screen recordings from leaking their
+			// raw first frame (e.g. OBS browser window) into the page.
+			player.preload = 'none';
 			player.crossOrigin = 'use-credentials';
 			player.setAttribute('crossorigin','use-credentials');
 			player.playsInline = true;
@@ -995,6 +999,14 @@ async function loadVideos(){
 			player.controls = false;
 			if(video.thumbnail) player.poster = '' + apiBase + video.thumbnail;
 			else { const svgUrl = svgPosterDataUrl(video); if(svgUrl) player.poster = svgUrl; }
+			// Preload metadata on the first user interaction only (the play handler
+			// toggles preload back to 'metadata' so the duration label populates).
+			let preloadedMeta = false;
+			function preloadMeta(){
+				if(preloadedMeta) return;
+				preloadedMeta = true;
+				try{ player.preload = 'metadata'; player.load(); }catch(e){}
+			}
 			// Prefer personalizedUrl when backend already burns; fallback to generic signed url
 			(function setInitialSrc(){
 				// Always start from generic MP4 (video.url). Never use manifest URL or
@@ -1213,6 +1225,7 @@ async function loadVideos(){
 
 				// toggle play — always allowed; notice is non-blocking info when ALLOW_GENERIC_FALLBACK=true
 				function togglePlay(){
+					preloadMeta();
 					if(player.paused) player.play().catch(function(){});
 					else player.pause();
 				}
