@@ -553,9 +553,11 @@ async function loadVideos(){
 						if(fill) fill.style.width = '100%';
 						setTimeout(function(){ if(notice && notice.parentNode) notice.remove(); }, 650);
 					}
-					if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
-					if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
-					let finalSrc = personalizedUrl;
+				if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
+				if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
+				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
+				try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
+				let finalSrc = personalizedUrl;
 					if(finalSrc && finalSrc.startsWith('/') && apiBase) finalSrc = apiBase + finalSrc;
 					const curSrc = player.src || '';
 					function stripBase(s){ try{ const u=new URL(s, location.origin); return u.pathname+u.search; }catch(e){ return s; } }
