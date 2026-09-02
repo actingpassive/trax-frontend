@@ -1146,11 +1146,35 @@ async function loadVideos(){
                     player.addEventListener('loadedmetadata', function(){
                         const dur=player.duration||0;
                         const cur=player.currentTime||0;
-                        const pct = dur && isFinite(dur) && dur>0 ? (cur/dur)*100 : 0;
-                        if(range) range.value=String(pct);
-                        if(fill) fill.style.width=pct+'%';
-                        if(thumb) thumb.style.left=pct+'%';
-                        syncTimeLabels(cur,dur);
+                        if(pendingSeekPct !== null && dur && isFinite(dur) && dur > 0){
+                            const seekTime = (pendingSeekPct/100)*dur;
+                            pendingSeekPct = null;
+                            try{ player.currentTime = seekTime; }catch(e){}
+                            const pct2 = (seekTime/dur)*100;
+                            if(range) range.value=String(pct2);
+                            if(fill) fill.style.width=pct2+'%';
+                            if(thumb) thumb.style.left=pct2+'%';
+                            syncTimeLabels(seekTime,dur);
+                        } else {
+                            const pct = dur && isFinite(dur) && dur>0 ? (cur/dur)*100 : 0;
+                            if(range) range.value=String(pct);
+                            if(fill) fill.style.width=pct+'%';
+                            if(thumb) thumb.style.left=pct+'%';
+                            syncTimeLabels(cur,dur);
+                        }
+                    });
+                    player.addEventListener('durationchange', function(){
+                        const dur=player.duration||0;
+                        if(pendingSeekPct !== null && dur && isFinite(dur) && dur > 0){
+                            const seekTime = (pendingSeekPct/100)*dur;
+                            pendingSeekPct = null;
+                            try{ player.currentTime = seekTime; }catch(e){}
+                            const pct = (seekTime/dur)*100;
+                            if(range) range.value=String(pct);
+                            if(fill) fill.style.width=pct+'%';
+                            if(thumb) thumb.style.left=pct+'%';
+                            syncTimeLabels(seekTime,dur);
+                        }
                     });
                     if(timeline){
                         timeline.style.touchAction='none';
