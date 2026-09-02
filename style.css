@@ -804,33 +804,48 @@ body::before{
 .video-modal .video-player-controls{background:var(--surface-2);border-top:1px solid var(--line);padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
 /* #videoModal is the element JS fullscreenes — must fill viewport in all vendor prefixes; ::backdrop ensures black behind */
 #videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
-.video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0;border:0;background:#000;padding:0;display:flex;flex-direction:column}
-#videoModal:fullscreen::backdrop,#videoModal:-webkit-full-screen::backdrop,.video-modal:fullscreen::backdrop,.video-modal:-webkit-full-screen::backdrop{background:#000;}
+.video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{
+  width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;
+  border-radius:0!important;border:0!important;background:#000!important;padding:0!important;
+  display:flex!important;flex-direction:column!important;inset:0!important;
+}
+#videoModal:fullscreen::backdrop,#videoModal:-webkit-full-screen::backdrop,.video-modal:fullscreen::backdrop,.video-modal:-webkit-full-screen::backdrop{background:#000!important}
 #videoModal:fullscreen .video-modal-card,#videoModal:-webkit-full-screen .video-modal-card,#videoModal:-moz-full-screen .video-modal-card,#videoModal:-ms-fullscreen .video-modal-card,
-.video-modal:fullscreen .video-modal-card,.video-modal:-webkit-full-screen .video-modal-card,.video-modal:-moz-full-screen .video-modal-card,.video-modal:-ms-fullscreen .video-modal-card{width:100vw;height:100vh;max-width:none;max-height:none;border-radius:0;border:0;background:#000;display:flex;flex-direction:column;overflow:hidden}
+.video-modal:fullscreen .video-modal-card,.video-modal:-webkit-full-screen .video-modal-card,.video-modal:-moz-full-screen .video-modal-card,.video-modal:-ms-fullscreen .video-modal-card{
+  width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;
+  border-radius:0!important;border:0!important;background:#000!important;
+  display:flex!important;flex-direction:column!important;overflow:hidden!important;box-shadow:none!important;
+}
 #videoModal:fullscreen .video-modal-stage,#videoModal:-webkit-full-screen .video-modal-stage,#videoModal:-moz-full-screen .video-modal-stage,#videoModal:-ms-fullscreen .video-modal-stage,
-.video-modal:fullscreen .video-modal-stage,.video-modal:-webkit-full-screen .video-modal-stage,.video-modal:-moz-full-screen .video-modal-stage,.video-modal:-ms-fullscreen .video-modal-stage{flex:1;aspect-ratio:unset;width:100%;height:100%;min-height:0;overflow:hidden}
+.video-modal:fullscreen .video-modal-stage,.video-modal:-webkit-full-screen .video-modal-stage,.video-modal:-moz-full-screen .video-modal-stage,.video-modal:-ms-fullscreen .video-modal-stage{
+  flex:1!important;aspect-ratio:unset!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important;
+}
 #videoModal:fullscreen .video-modal-stage video,#videoModal:-webkit-full-screen .video-modal-stage video,#videoModal:-moz-full-screen .video-modal-stage video,#videoModal:-ms-fullscreen .video-modal-stage video,
-.video-modal:fullscreen .video-modal-stage video,.video-modal:-webkit-full-screen .video-modal-stage video,.video-modal:-moz-full-screen .video-modal-stage video,.video-modal:-ms-fullscreen .video-modal-stage video{width:100%;height:100%;object-fit:contain}
+.video-modal:fullscreen .video-modal-stage video,.video-modal:-webkit-full-screen .video-modal-stage video,.video-modal:-moz-full-screen .video-modal-stage video,.video-modal:-ms-fullscreen .video-modal-stage video{
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
 #videoModal:fullscreen .video-modal-info,#videoModal:-webkit-full-screen .video-modal-info,
-.video-modal:fullscreen .video-modal-info,.video-modal:-webkit-full-screen .video-modal-info{display:none}
+.video-modal:fullscreen .video-modal-info,.video-modal:-webkit-full-screen .video-modal-info{display:none!important}
 #videoModal:fullscreen .video-player-controls,#videoModal:-webkit-full-screen .video-player-controls,
 .video-modal:fullscreen .video-player-controls,.video-modal:-webkit-full-screen .video-player-controls{
-  position:absolute;left:0;right:0;bottom:0;
-  background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.55) 55%,rgba(0,0,0,0.15) 85%,transparent 100%);
-  background-color:rgba(12,12,14,0.72);border-top:0;padding:14px 16px 16px;
-  opacity:0;transform:translateY(8px);transition:opacity 220ms ease,transform 220ms ease;
-  pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:5;
-  flex-shrink:0;
+  position:absolute!important;left:0!important;right:0!important;bottom:0!important;
+  background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.55) 55%,rgba(0,0,0,0.15) 85%,transparent 100%)!important;
+  background-color:rgba(12,12,14,0.72)!important;border-top:0!important;padding:14px 16px 16px!important;
+  opacity:0!important;transform:translateY(8px)!important;transition:opacity 220ms ease,transform 220ms ease!important;
+  pointer-events:none!important;backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;z-index:5!important;
+  flex-shrink:0!important;
 }
 #videoModal:fullscreen:hover .video-player-controls,#videoModal:-webkit-full-screen:hover .video-player-controls,
 #videoModal:fullscreen.is-controls-visible .video-player-controls,#videoModal:-webkit-full-screen.is-controls-visible .video-player-controls,
 .video-modal:fullscreen:hover .video-player-controls,.video-modal:-webkit-full-screen:hover .video-player-controls,
 .video-modal:fullscreen.is-controls-visible .video-player-controls,.video-modal:-webkit-full-screen.is-controls-visible .video-player-controls{
-  opacity:1;transform:translateY(0);pointer-events:auto;
+  opacity:1!important;transform:translateY(0)!important;pointer-events:auto!important;
 }
 #videoModal:fullscreen .video-modal-close,#videoModal:-webkit-full-screen .video-modal-close,
-.video-modal:fullscreen .video-modal-close,.video-modal:-webkit-full-screen .video-modal-close{position:fixed;top:16px;right:16px;z-index:100;background:rgba(0,0,0,0.7);border-color:rgba(255,255,255,0.2)}
+.video-modal:fullscreen .video-modal-close,.video-modal:-webkit-full-screen .video-modal-close{
+  position:fixed!important;top:16px!important;right:16px!important;z-index:100!important;
+  background:rgba(0,0,0,0.7)!important;border-color:rgba(255,255,255,0.2)!important;
+}
 @media(max-width:768px){.video-modal{padding:12px}.video-modal-card{width:96vw;max-height:92vh}.video-modal-stage{aspect-ratio:16/10}}
 
 .upload{display:inline-block;margin-top:12px;background:var(--surface);padding:8px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--line)}
