@@ -234,41 +234,35 @@ body::before{
 }
 .video-watermark-tiled{
   position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;mix-blend-mode:normal;overflow:hidden;
-  display:block;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  grid-template-rows:repeat(8,1fr);
+  padding:clamp(4px,0.6vw,8px);
   box-sizing:border-box;
-  padding:clamp(8px,1.2vw,16px);
 }
 .video-watermark__tile{
-  position:absolute;
   color:rgba(255,255,255,.92);
   font-family:system-ui,-apple-system,sans-serif;
   font-weight:700;
+  font-size:clamp(7px,0.8vw,10px);
   line-height:1.2;
   letter-spacing:.06em;
   text-transform:lowercase;
   white-space:nowrap;
   text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.55);
-  max-width:88%;
+  max-width:100%;
   overflow:hidden;
   text-overflow:ellipsis;
   will-change:transform;
   pointer-events:none;
   box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transform:rotate(var(--r,0deg));
+  opacity:.60;
 }
-.video-watermark__tile--center{
-  left:50%;top:50%;
-  transform:translate(-50%,-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));
-  font-size:clamp(12px,1.6vw,18px);
-  opacity:.90;
-}
-.video-watermark__tile--tl{left:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--tr{right:clamp(12px,1.8vw,22px);top:clamp(12px,1.8vw,22px);left:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--bl{left:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--br{right:clamp(12px,1.8vw,22px);bottom:clamp(12px,1.8vw,22px);left:auto;top:auto;transform:rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--tc{left:50%;top:clamp(12px,1.8vw,22px);transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--bc{left:50%;bottom:clamp(12px,1.8vw,22px);top:auto;transform:translateX(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--ml{left:clamp(12px,1.8vw,22px);top:50%;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
-.video-watermark__tile--mr{right:clamp(12px,1.8vw,22px);top:50%;left:auto;transform:translateY(-50%) rotate(var(--r,0deg)) translate(var(--dx,0),var(--dy,0));font-size:clamp(9px,1.0vw,12px);opacity:.90;}
+.video-watermark__tile--center{display:none;}
 @keyframes wm-drift{from{transform:rotate(var(--r,0deg)) translate(-8px,-6px) translate(var(--dx,0),var(--dy,0))} to{transform:rotate(var(--r,0deg)) translate(8px,6px) translate(var(--dx,0),var(--dy,0))}}
 .video-watermark-canvas{
   position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:3;
@@ -669,9 +663,9 @@ body::before{
 .custom-player-wrapper:-moz-full-screen .video-watermark-canvas,
 .custom-player-wrapper:-ms-fullscreen .video-watermark-canvas{inset:0 !important;bottom:0 !important}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark-tiled,
-.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.90 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.90 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.60 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.60 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
 #videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
 .video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{
   padding:0 !important;
@@ -1604,18 +1598,18 @@ body::before{
   .custom-player-wrapper{animation:none}
 }
 
-.video-watermark__tile--center{opacity:.90 !important;}
-.video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
+.video-watermark__tile--center{opacity:.60 !important;}
+.video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}
 .video-modal[data-watermark="burned"] .video-watermark__tile--center,
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal[data-watermark="burned"] .video-watermark__tile--center,
-#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
+#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
 .video-modal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 #videoModal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
+#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal:-webkit-full-screen[data-watermark="burned"] .video-watermark__tile--center,
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.90 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.90 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}

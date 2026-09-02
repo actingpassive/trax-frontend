@@ -2,7 +2,7 @@ const VIDEO_SECTIONS = {
 	"Day 1": ["Amd", "Orderblocks", "OHLC", "OLHC"],
 	"Day 2": ["Daily bias", "Key opens", "SMT Divergence"],
 	"Day 3": ["Protected High/Low", "Narrative", "IDM"],
-	"Day 4": ["Net GEX", "Pinning", "0dte", "Open Intrest"]
+	"Day 4": ["Net GEX", "Pinning", "0dte", "Open Interest"]
 };
 
 async function loadVideos(){
@@ -197,26 +197,18 @@ async function loadVideos(){
 		wrap.className = 'video-watermark-tiled';
 		wrap.setAttribute('aria-hidden','true');
 		wrap.style.pointerEvents = 'none';
-		const positions = [
-			'center',
-			'tl',
-			'tr',
-			'bl',
-			'br',
-			'tc',
-			'bc',
-			'ml',
-			'mr'
-		];
-		for(let i=0;i<9;i++){
-			const span = document.createElement('span');
-			span.className = 'video-watermark__tile video-watermark__tile--' + positions[i];
-			span.textContent = 'drafted.world | @' + clean;
-			const r = (Math.random()*6 - 3).toFixed(2);
-			span.style.setProperty('--r', r + 'deg');
-			span.style.setProperty('--dx', '0px');
-			span.style.setProperty('--dy', '0px');
-			wrap.appendChild(span);
+		const COLS = 5, ROWS = 8;
+		for(let r = 0; r < ROWS; r++){
+			for(let c = 0; c < COLS; c++){
+				const span = document.createElement('span');
+				span.className = 'video-watermark__tile';
+				span.textContent = 'drafted.world | @' + clean;
+				const rot = (Math.random()*8 - 4).toFixed(2);
+				span.style.setProperty('--r', rot + 'deg');
+				span.style.gridRow = String(r + 1);
+				span.style.gridColumn = String(c + 1);
+				wrap.appendChild(span);
+			}
 		}
 		return wrap;
 	}
@@ -238,18 +230,20 @@ async function loadVideos(){
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 			ctx.save();
 			ctx.scale(dpr, dpr);
-			const margin = 20;
-			const tiles = [
-				{ x: rect.width*0.5, y: rect.height*0.5, align:'center', baseline:'middle', font:'700 15px system-ui, -apple-system, sans-serif', alpha:0.10 },
-				{ x: margin, y: margin, align:'left', baseline:'top', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: rect.width - margin, y: margin, align:'right', baseline:'top', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: margin, y: rect.height - margin, align:'left', baseline:'bottom', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: rect.width - margin, y: rect.height - margin, align:'right', baseline:'bottom', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: rect.width*0.5, y: margin, align:'center', baseline:'top', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: rect.width*0.5, y: rect.height - margin, align:'center', baseline:'bottom', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: margin, y: rect.height*0.5, align:'left', baseline:'middle', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 },
-				{ x: rect.width - margin, y: rect.height*0.5, align:'right', baseline:'middle', font:'700 10px system-ui, -apple-system, sans-serif', alpha:0.07 }
-			];
+		const margin = 10;
+		const COLS = 5, ROWS = 8;
+		const cellW = (rect.width - margin*2) / COLS;
+		const cellH = (rect.height - margin*2) / ROWS;
+		const tiles = [];
+		for(let r = 0; r < ROWS; r++){
+			for(let c = 0; c < COLS; c++){
+				const cx = margin + cellW * c + cellW * 0.5;
+				const cy = margin + cellH * r + cellH * 0.5;
+				const align = c < COLS/2 ? 'left' : 'right';
+				const baseline = r < ROWS/2 ? 'top' : 'bottom';
+				tiles.push({ x: cx, y: cy, align: align, baseline: baseline, font:'600 10px system-ui, -apple-system, sans-serif', alpha:0.60 });
+			}
+		}
 			for(let i=0;i<tiles.length;i++){
 					const t = tiles[i];
 					ctx.save();
