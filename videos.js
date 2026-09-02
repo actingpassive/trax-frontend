@@ -1243,6 +1243,43 @@ async function loadVideos(){
                         }
                     if(stageEl) stageEl.addEventListener('dblclick', function(e){ e.preventDefault(); toggleWrapperFs(); });
                         if(player) player.addEventListener('dblclick', function(e){ e.preventDefault(); e.stopPropagation(); toggleWrapperFs(); });
+                    // Controls auto-hide in maximized mode — show only when mouse near bottom
+                    try{
+                        const modalForFs = document.getElementById('videoModal');
+                        const controlsEl = document.getElementById('videoModalControls');
+                        let controlsTimer = null;
+                        function showControls(){
+                            if(!modalForFs || !modalForFs.classList.contains('is-maximized')) return;
+                            modalForFs.classList.add('is-controls-visible');
+                            clearTimeout(controlsTimer);
+                            controlsTimer = setTimeout(function(){ modalForFs.classList.remove('is-controls-visible'); }, 3000);
+                        }
+                        function hideControls(){
+                            if(!modalForFs) return;
+                            modalForFs.classList.remove('is-controls-visible');
+                            clearTimeout(controlsTimer);
+                        }
+                        document.addEventListener('mousemove', function(e){
+                            if(!modalForFs || !modalForFs.classList.contains('is-maximized')){ hideControls(); return; }
+                            const vh = window.innerHeight || document.documentElement.clientHeight;
+                            const bottomThreshold = vh * 0.85;
+                            if(e.clientY >= bottomThreshold){
+                                showControls();
+                            } else {
+                                hideControls();
+                            }
+                        });
+                        // Also show on mouse enter controls area directly
+                        if(controlsEl) controlsEl.addEventListener('mouseenter', function(){
+                            if(!modalForFs || !modalForFs.classList.contains('is-maximized')) return;
+                            modalForFs.classList.add('is-controls-visible');
+                            clearTimeout(controlsTimer);
+                        });
+                        if(controlsEl) controlsEl.addEventListener('mouseleave', function(){
+                            if(!modalForFs || !modalForFs.classList.contains('is-maximized')) return;
+                            controlsTimer = setTimeout(function(){ modalForFs.classList.remove('is-controls-visible'); }, 1500);
+                        });
+                    }catch(e){}
                     // function ensureWatermarkVisible(){
                     //     try{
                     //         const wm = stageEl ? stageEl.querySelector('.video-watermark-tiled,.video-watermark-canvas') : null;
