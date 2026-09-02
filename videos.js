@@ -8,6 +8,7 @@ const VIDEO_SECTIONS = {
 async function loadVideos(){
 	const status = document.getElementById('video-status');
 	const list = document.getElementById('videoGrid') || document.getElementById('video-list');
+	if(list) list.classList.add('video-list--grid');
 	const login = document.getElementById('video-login');
 	const countEl = document.getElementById('videoCount');
 	const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
@@ -617,39 +618,6 @@ async function loadVideos(){
 		}catch(e){ return ''; }
 	}
 
-	function initVideoViewToggle(){
-		const listEl = document.getElementById('videoGrid') || document.getElementById('video-list');
-		const btns = document.querySelectorAll('.view-toggle__btn');
-		if(!listEl || !btns.length) return;
-		const KEY = 'drafted-video-view-v2';
-		function apply(mode){
-			const m = mode === 'grid' ? 'grid' : 'list';
-			if(m === 'grid') listEl.classList.add('video-list--grid');
-			else listEl.classList.remove('video-list--grid');
-			btns.forEach(function(b){
-				const isActive = b.getAttribute('data-view-mode') === m;
-				if(isActive) b.classList.add('active');
-				else b.classList.remove('active');
-				b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-			});
-			try{ localStorage.setItem(KEY, m); }catch(e){}
-		}
-		let initial = 'grid';
-		try{
-			const v = localStorage.getItem(KEY);
-			if(v === 'grid' || v === 'list') initial = v;
-		}catch(e){}
-		apply(initial);
-		btns.forEach(function(b){
-			b.addEventListener('click', function(e){
-				e.preventDefault();
-				apply(b.getAttribute('data-view-mode'));
-			});
-		});
-		window._setVideoView = apply;
-	}
-
-	initVideoViewToggle();
 	initFilters();
 
 	function updateCount(n){
@@ -968,6 +936,12 @@ async function loadVideos(){
                 modal.classList.add('hidden');
                 document.body.style.overflow = '';
                 try{ player.pause(); }catch(e){}
+                try{
+                    if(document.fullscreenElement) document.exitFullscreen();
+                    else if(document.webkitFullscreenElement) document.webkitExitFullscreen();
+                    else if(document.mozFullScreenElement) document.mozCancelFullScreen();
+                    else if(document.msFullscreenElement) document.msExitFullscreen();
+                }catch(e){}
             try{ if(modal._unharden) modal._unharden(); modal._unharden=null; }catch(e){}
                 try{ if(modal._stopJitter) modal._stopJitter(); modal._stopJitter=null; }catch(e){}
                 try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); modal._unhardenCanvas=null; }catch(e){}
@@ -1253,17 +1227,22 @@ async function loadVideos(){
                     });
                     if(fullscreenBtn) fullscreenBtn.addEventListener('click', function(){
                         const modalEl = document.getElementById('videoModal');
+                        if(!modalEl) return;
                         const isFs = document.fullscreenElement===modalEl || document.webkitFullscreenElement===modalEl || document.mozFullScreenElement===modalEl || document.msFullscreenElement===modalEl;
                         if(!isFs){
-                            if(modalEl.requestFullscreen) modalEl.requestFullscreen().catch(function(){});
-                            else if(modalEl.webkitRequestFullscreen) modalEl.webkitRequestFullscreen();
-                            else if(modalEl.mozRequestFullScreen) modalEl.mozRequestFullScreen();
-                            else if(modalEl.msRequestFullscreen) modalEl.msRequestFullscreen();
+                            try{
+                                if(modalEl.requestFullscreen) modalEl.requestFullscreen();
+                                else if(modalEl.webkitRequestFullscreen) modalEl.webkitRequestFullscreen();
+                                else if(modalEl.mozRequestFullScreen) modalEl.mozRequestFullScreen();
+                                else if(modalEl.msRequestFullscreen) modalEl.msRequestFullscreen();
+                            }catch(e){}
                         } else {
-                            if(document.exitFullscreen) document.exitFullscreen();
-                            else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-                            else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
-                            else if(document.msExitFullscreen) document.msExitFullscreen();
+                            try{
+                                if(document.exitFullscreen) document.exitFullscreen();
+                                else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+                                else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
+                                else if(document.msExitFullscreen) document.msExitFullscreen();
+                            }catch(e){}
                         }
                     });
                     try{
@@ -1272,15 +1251,19 @@ async function loadVideos(){
                         function toggleWrapperFs(){
                             const isFs2 = document.fullscreenElement===modalEl2 || document.webkitFullscreenElement===modalEl2 || document.mozFullScreenElement===modalEl2 || document.msFullscreenElement===modalEl2;
                             if(!isFs2){
-                                if(modalEl2.requestFullscreen) modalEl2.requestFullscreen().catch(function(){});
-                                else if(modalEl2.webkitRequestFullscreen) modalEl2.webkitRequestFullscreen();
-                                else if(modalEl2.mozRequestFullScreen) modalEl2.mozRequestFullScreen();
-                                else if(modalEl2.msRequestFullscreen) modalEl2.msRequestFullscreen();
+                                try{
+                                    if(modalEl2.requestFullscreen) modalEl2.requestFullscreen();
+                                    else if(modalEl2.webkitRequestFullscreen) modalEl2.webkitRequestFullscreen();
+                                    else if(modalEl2.mozRequestFullScreen) modalEl2.mozRequestFullScreen();
+                                    else if(modalEl2.msRequestFullscreen) modalEl2.msRequestFullscreen();
+                                }catch(e){}
                             } else {
-                                if(document.exitFullscreen) document.exitFullscreen();
-                                else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-                                else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
-                                else if(document.msExitFullscreen) document.msExitFullscreen();
+                                try{
+                                    if(document.exitFullscreen) document.exitFullscreen();
+                                    else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+                                    else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
+                                    else if(document.msExitFullscreen) document.msExitFullscreen();
+                                }catch(e){}
                             }
                         }
                         if(stageEl) stageEl.addEventListener('dblclick', function(e){ e.preventDefault(); toggleWrapperFs(); });
