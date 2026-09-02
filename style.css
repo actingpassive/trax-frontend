@@ -338,7 +338,7 @@ body::before{
 }
 .video-player-timeline{
   position:relative;
-  height:18px;
+  height:24px;
   display:flex;
   align-items:center;
   cursor:pointer;
@@ -417,6 +417,25 @@ body::before{
 .video-player-timeline.is-dragging .video-player-timeline__thumb{
   transition:none!important;
 }
+.video-player-timeline-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.video-player-timeline__time{
+  font-size:0.72rem;
+  font-weight:600;
+  color:var(--muted);
+  min-width:40px;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  user-select:none;
+  pointer-events:none;
+  z-index:1;
+  flex-shrink:0;
+}
+.video-player-timeline__time--current{text-align:right}
+.video-player-timeline__time--duration{text-align:left}
 .video-player-bar{
   display:flex;
   align-items:center;

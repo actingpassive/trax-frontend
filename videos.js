@@ -570,8 +570,16 @@ async function loadVideos(){
 						try{
 							player.src = finalSrc;
 							player.load();
-							if(curTime>0.5){ try{ player.currentTime = curTime; }catch(e){} }
-							if(wasPlaying){ player.play().catch(function(){}); }
+							if(curTime > 0.5){
+								const restoreSeek = function(){
+									player.removeEventListener('loadedmetadata', restoreSeek);
+									try{ player.currentTime = curTime; }catch(e){}
+									if(wasPlaying){ player.play().catch(function(){}); }
+								};
+								player.addEventListener('loadedmetadata', restoreSeek);
+							} else if(wasPlaying){
+								player.play().catch(function(){});
+							}
 						}catch(e){}
 					} else {
 						if(notice && notice.isConnected) try{ notice.remove(); }catch(e){}

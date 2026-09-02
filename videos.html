@@ -57,12 +57,16 @@
 				<p id="videoModalMeta" class="video-modal-meta">—</p>
 			</div>
 			<div class="video-player-controls" id="videoModalControls">
-				<div class="video-player-timeline" id="videoModalTimeline">
-					<div class="video-player-timeline__track">
-						<div id="videoModalFill" class="video-player-timeline__fill"></div>
-						<div id="videoModalThumb" class="video-player-timeline__thumb" aria-hidden="true"></div>
+				<div class="video-player-timeline-row">
+					<span id="videoModalCurrent" class="video-player-timeline__time video-player-timeline__time--current">00:00</span>
+					<div class="video-player-timeline" id="videoModalTimeline">
+						<div class="video-player-timeline__track">
+							<div id="videoModalFill" class="video-player-timeline__fill"></div>
+							<div id="videoModalThumb" class="video-player-timeline__thumb" aria-hidden="true"></div>
+						</div>
+						<input id="videoModalProgress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
 					</div>
-					<input id="videoModalProgress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
+					<span id="videoModalDuration" class="video-player-timeline__time video-player-timeline__time--duration">00:00</span>
 				</div>
 				<div class="video-player-bar">
 					<div class="video-player-bar__left">
@@ -75,10 +79,8 @@
 						<button id="videoModalNext" class="icon-btn" type="button" aria-label="Next video">
 							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><polygon points="13 5 18 12 13 19" fill="currentColor" stroke="none"/><rect x="6" y="5" width="2" height="14" rx="1" fill="currentColor"/></svg>
 						</button>
-						<span id="videoModalCurrent" class="video-player-time video-player-time--current">00:00</span>
 					</div>
 					<div class="video-player-bar__right">
-						<span id="videoModalDuration" class="video-player-time video-player-time--duration">00:00</span>
 						<button id="videoModalMute" class="icon-btn" type="button" aria-label="Mute">
 							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 5V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19 6a9 9 0 010 12"/></svg>
 						</button>
