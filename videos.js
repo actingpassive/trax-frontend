@@ -430,7 +430,8 @@ async function loadVideos(){
 		}
 		const parsed = parseSignedParams(video.url);
 		if(!parsed.expires || !parsed.signature) return function(){};
-		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature);
+		const _accessToken = window.__traxAccessToken || '';
+		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
 		let pollTimer = null;
 		let notice = null;
@@ -546,7 +547,7 @@ async function loadVideos(){
 					else if(data && data.url) personalizedUrl = String(data.url);
 					else if(video.personalizedUrl) personalizedUrl = String(video.personalizedUrl);
 					else {
-						personalizedUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + '&personalized=1';
+						personalizedUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + '&personalized=1' + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 					}
 					if(notice && notice.isConnected){
 						const fill = notice.querySelector('.personalizing-notice__fill');
@@ -786,9 +787,10 @@ async function loadVideos(){
 						v = u.displayName || u.username || u.discordName || u.discord || u.name || u.viewer || '';
 					}
 					if(!v) v = whoData.viewer || whoData.displayName || whoData.username || whoData.name || '';
-					if(v) cachedWhoamiViewer = String(v).trim().slice(0,32);
-				}
-			}catch(e){}
+				if(v) cachedWhoamiViewer = String(v).trim().slice(0,32);
+				if(whoData.accessToken) window.__traxAccessToken = whoData.accessToken;
+			}
+		}catch(e){}
 		}
 		filteredVideos.forEach(function(video, videoIdx){
 		let viewerName = video.viewer || cachedWhoamiViewer || '';
@@ -1338,6 +1340,7 @@ list.replaceChildren(...articles);
 	try{
 		const authResponse = await fetch(apiBase + '/api/whoami?t=' + Date.now(), {credentials:'include', cache:'no-store'});
 		const auth = await authResponse.json();
+		if(auth.accessToken) window.__traxAccessToken = auth.accessToken;
 		if(!auth.user){
 			status.textContent = 'Sign in with Discord to view the video library.';
 			if(login) login.hidden = false;
