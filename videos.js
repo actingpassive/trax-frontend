@@ -1262,7 +1262,7 @@ async function loadVideos(){
                             try{
                                 const wm = stageEl ? stageEl.querySelector('.video-watermark-tiled,.video-watermark-canvas') : null;
                                 if(wm){
-                                    wm.style.display='block';
+                                    if(wm.classList.contains('video-watermark-tiled')) wm.style.display='grid'; else wm.style.display='block';
                                     wm.style.opacity='';
                                     wm.style.visibility='visible';
                                     wm.style.pointerEvents='none';
