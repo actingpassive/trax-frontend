@@ -260,7 +260,7 @@ body::before{
   align-items:center;
   justify-content:center;
   transform:rotate(var(--r,0deg));
-  opacity:.60;
+  opacity:.48;
 }
 .video-watermark__tile--center{display:none;}
 @keyframes wm-drift{from{transform:rotate(var(--r,0deg)) translate(-8px,-6px) translate(var(--dx,0),var(--dy,0))} to{transform:rotate(var(--r,0deg)) translate(8px,6px) translate(var(--dx,0),var(--dy,0))}}
@@ -682,9 +682,9 @@ body::before{
 .custom-player-wrapper:-moz-full-screen .video-watermark-canvas,
 .custom-player-wrapper:-ms-fullscreen .video-watermark-canvas{inset:0 !important;bottom:0 !important}
 .custom-player-wrapper[data-watermark="burned"] .video-watermark-tiled,
-.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.60 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.60 !important;}
-.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark-canvas{opacity:.48 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile{opacity:.48 !important;}
+.custom-player-wrapper[data-watermark="burned"] .video-watermark__tile--center{opacity:.48 !important;}
 #videoModal:fullscreen,#videoModal:-webkit-full-screen,#videoModal:-moz-full-screen,#videoModal:-ms-fullscreen,
 .video-modal:fullscreen,.video-modal:-webkit-full-screen,.video-modal:-moz-full-screen,.video-modal:-ms-fullscreen{
   padding:0 !important;
@@ -1627,18 +1627,33 @@ body::before{
   .custom-player-wrapper{animation:none}
 }
 
-.video-watermark__tile--center{opacity:.60 !important;}
-.video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}
+.video-watermark__tile--center{opacity:.48 !important;}
+.video-watermark__tile:not(.video-watermark__tile--center){opacity:.48 !important;}
 .video-modal[data-watermark="burned"] .video-watermark__tile--center,
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal[data-watermark="burned"] .video-watermark__tile--center,
-#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
+#videoModalStage[data-watermark="burned"] .video-watermark__tile--center{opacity:.48 !important;}
 .video-modal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 .video-modal-stage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
 #videoModal[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}
+#videoModalStage[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.48 !important;}
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile--center,
 #videoModal:-webkit-full-screen[data-watermark="burned"] .video-watermark__tile--center,
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.60 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile--center{opacity:.48 !important;}
 #videoModal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center),
-.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.60 !important;}
+.video-modal:fullscreen[data-watermark="burned"] .video-watermark__tile:not(.video-watermark__tile--center){opacity:.48 !important;}
+
+/* === CSS-based maximize (fallback for Fullscreen API) === */
+.video-modal.is-maximized{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;border-radius:0!important;border:0!important;background:#000!important;padding:0!important;display:flex!important;flex-direction:column!important;inset:0!important;z-index:99999!important}
+.video-modal.is-maximized .video-modal-backdrop{display:none!important}
+.video-modal.is-maximized .video-modal-card{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;border-radius:0!important;border:0!important;background:#000!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;box-shadow:none!important}
+.video-modal.is-maximized .video-modal-stage{flex:1!important;aspect-ratio:unset!important;width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+.video-modal.is-maximized .video-modal-stage video{width:100%!important;height:100%!important;object-fit:contain!important}
+.video-modal.is-maximized .video-modal-info{display:none!important}
+.video-modal.is-maximized .video-player-controls{position:absolute!important;left:0!important;right:0!important;bottom:0!important;background:linear-gradient(to top,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.55) 55%,rgba(0,0,0,0.15) 85%,transparent 100%)!important;background-color:rgba(12,12,14,0.72)!important;border-top:0!important;padding:14px 16px 16px!important;opacity:0!important;transform:translateY(8px)!important;transition:opacity 220ms ease,transform 220ms ease!important;pointer-events:none!important;backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;z-index:5!important;flex-shrink:0!important}
+.video-modal.is-maximized:hover .video-player-controls,.video-modal.is-maximized.is-controls-visible .video-player-controls{opacity:1!important;transform:translateY(0)!important;pointer-events:auto!important}
+.video-modal.is-maximized .video-modal-close{opacity:0!important;pointer-events:none!important;transition:opacity 200ms ease!important}
+.video-modal.is-maximized:hover .video-modal-close{opacity:1!important;pointer-events:auto!important}
+.video-modal.is-maximized .video-watermark-tiled{inset:0 !important;display:grid !important;opacity:1 !important;visibility:visible !important;z-index:3 !important;pointer-events:none !important}
+.video-modal.is-maximized .video-watermark__tile--center{font-size:clamp(14px,2.2vw,26px) !important;opacity:.10 !important}
+.video-modal.is-maximized .video-watermark__tile:not(.video-watermark__tile--center){font-size:clamp(10px,1.4vw,14px) !important;opacity:.07 !important}
