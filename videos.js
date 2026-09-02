@@ -1152,20 +1152,6 @@ async function loadVideos(){
                         if(thumb) thumb.style.left=pct+'%';
                         syncTimeLabels(cur,dur);
                     });
-                    if(range){
-                        range.addEventListener('input', function(){
-                            const raw=parseFloat(range.value);
-                            const pct=isFinite(raw)?Math.max(0,Math.min(100,raw)):0;
-                            if(fill) fill.style.width=pct+'%';
-                            if(thumb) thumb.style.left=pct+'%';
-                            const dur=player.duration;
-                            const hasDur=dur && isFinite(dur) && dur>0;
-                            if(!hasDur){ pendingSeekPct=pct; return; }
-                            pendingSeekPct=null;
-                            try{ player.currentTime=(pct/100)*dur; }catch(e){}
-                            syncTimeLabels((pct/100)*dur, dur);
-                        });
-                    }
                     if(timeline){
                         timeline.style.touchAction='none';
                         const handlePointerDown = function(e){
