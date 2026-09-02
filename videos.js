@@ -191,215 +191,215 @@ async function loadVideos(){
 		if(!v) return 'viewer';
 		return v || 'viewer';
 	}
-	function createWatermark(viewer){
-		const clean = sanitizeViewer(viewer);
-		const wrap = document.createElement('div');
-		wrap.className = 'video-watermark-tiled';
-		wrap.setAttribute('aria-hidden','true');
-		wrap.style.pointerEvents = 'none';
-		const COLS = 5, ROWS = 8;
-		for(let r = 0; r < ROWS; r++){
-			for(let c = 0; c < COLS; c++){
-				const span = document.createElement('span');
-				span.className = 'video-watermark__tile';
-				span.textContent = 'drafted.world | @' + clean;
-				const rot = (Math.random()*8 - 4).toFixed(2);
-				span.style.setProperty('--r', rot + 'deg');
-				span.style.gridRow = String(r + 1);
-				span.style.gridColumn = String(c + 1);
-				wrap.appendChild(span);
-			}
-		}
-		return wrap;
-	}
-	function createCanvasWatermark(viewer, stage){
-		const clean = sanitizeViewer(viewer);
-		const text = 'drafted.world | @' + clean;
-		const canvas = document.createElement('canvas');
-		canvas.className = 'video-watermark-canvas';
-		canvas.setAttribute('aria-hidden','true');
-		canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:2;';
-		let ro = null;
-		let rafId = 0;
-		function draw(){
-			const rect = stage.getBoundingClientRect();
-			if(!rect.width || !rect.height) return;
-			const dpr = window.devicePixelRatio || 1;
-			const ctx = canvas.getContext('2d');
-			if(!ctx) return;
-			ctx.clearRect(0,0,canvas.width,canvas.height);
-			ctx.save();
-			ctx.scale(dpr, dpr);
-		const margin = 10;
-		const COLS = 5, ROWS = 8;
-		const cellW = (rect.width - margin*2) / COLS;
-		const cellH = (rect.height - margin*2) / ROWS;
-		const tiles = [];
-		for(let r = 0; r < ROWS; r++){
-			for(let c = 0; c < COLS; c++){
-				const cx = margin + cellW * c + cellW * 0.5;
-				const cy = margin + cellH * r + cellH * 0.5;
-				const align = c < COLS/2 ? 'left' : 'right';
-				const baseline = r < ROWS/2 ? 'top' : 'bottom';
-				tiles.push({ x: cx, y: cy, align: align, baseline: baseline, font:'600 10px system-ui, -apple-system, sans-serif', alpha:0.60 });
-			}
-		}
-			for(let i=0;i<tiles.length;i++){
-					const t = tiles[i];
-					ctx.save();
-					ctx.font = t.font;
-					ctx.fillStyle = 'rgba(255,255,255,' + t.alpha + ')';
-					ctx.textAlign = t.align;
-					ctx.textBaseline = t.baseline;
-					ctx.translate(t.x, t.y);
-					const rot = (Math.random()*6 - 3) * Math.PI / 180;
-					ctx.rotate(rot);
-					ctx.shadowColor = 'rgba(0,0,0,0.7)';
-					ctx.shadowBlur = 2;
-					ctx.shadowOffsetY = 1;
-					ctx.fillText(text, 0, 0);
-					ctx.restore();
-				}
-			ctx.restore();
-		}
-		function resize(){
-			const rect = stage.getBoundingClientRect();
-			const dpr = window.devicePixelRatio || 1;
-			const w = Math.max(1, Math.floor(rect.width * dpr));
-			const h = Math.max(1, Math.floor(rect.height * dpr));
-			if(canvas.width !== w) canvas.width = w;
-			if(canvas.height !== h) canvas.height = h;
-			canvas.style.width = rect.width + 'px';
-			canvas.style.height = rect.height + 'px';
-			cancelAnimationFrame(rafId);
-			rafId = requestAnimationFrame(draw);
-		}
-		requestAnimationFrame(resize);
-		try{
-			ro = new ResizeObserver(resize);
-			ro.observe(stage);
-		}catch(e){
-			window.addEventListener('resize', resize);
-		}
-		canvas._wmCleanup = function(){
-			cancelAnimationFrame(rafId);
-			if(ro) try{ ro.disconnect(); }catch(e){}
-			window.removeEventListener('resize', resize);
-		};
-		let jitterIv = setInterval(draw, 4000 + Math.random()*2000);
-		canvas._wmJitterCleanup = function(){ clearInterval(jitterIv); };
-		document.addEventListener('visibilitychange', function vis(){
-			if(document.hidden){ clearInterval(jitterIv); }
-			else { clearInterval(jitterIv); jitterIv = setInterval(draw, 4000 + Math.random()*2000); }
-		});
-		return canvas;
-	}
-	function hardenWatermark(wrapper, el){
-		if(!wrapper || !el) return function(){};
-		el.style.pointerEvents = 'none';
-		el.style.userSelect = 'none';
-		let restoring = false;
-		function check(){
-			if(restoring) return;
-			const comp = window.getComputedStyle ? window.getComputedStyle(el) : null;
-			const displayNone = comp && comp.display === 'none';
-			const opacityZero = comp && parseFloat(comp.opacity) === 0;
-			const inlineHidden = el.style.display === 'none' || el.style.opacity === '0' || el.hidden;
-			const notConnected = !el.isConnected;
-			const hidden = inlineHidden || displayNone || opacityZero;
-			if(notConnected){
-				restoring = true;
-				try{ wrapper.appendChild(el); }catch(e){}
-				el.style.display = '';
-				el.style.opacity = '';
-				el.hidden = false;
-				el.style.pointerEvents = 'none';
-				el.style.userSelect = 'none';
-				restoring = false;
-			}else if(hidden){
-				restoring = true;
-				el.style.display = '';
-				el.style.opacity = '';
-				el.hidden = false;
-				el.style.pointerEvents = 'none';
-				el.style.userSelect = 'none';
-				// force visible if still computed hidden
-				const comp2 = window.getComputedStyle ? window.getComputedStyle(el) : null;
-				if(comp2 && (comp2.display === 'none' || parseFloat(comp2.opacity) === 0)){
-					if(el.classList.contains('video-watermark-tiled')) el.style.display = 'grid';
-					else el.style.display = 'block';
-					el.style.opacity = wrapper && wrapper.getAttribute('data-watermark') === 'burned' ? '0.03' : '0.09';
-				}
-				restoring = false;
-			}
-		}
-		let mo = null;
-		try{
-			mo = new MutationObserver(function(){ check(); });
-			mo.observe(wrapper, {childList:true, subtree:false, attributes:true, attributeFilter:['style','class','hidden']});
-			mo.observe(el, {attributes:true, attributeFilter:['style','class','hidden']});
-		}catch(e){}
-		let mo2 = null;
-		try{
-			mo2 = new MutationObserver(function(){ if(!el.isConnected) check(); });
-			mo2.observe(document.body, {childList:true, subtree:true});
-		}catch(e){}
-		return function disconnect(){
-			try{ if(mo) mo.disconnect(); }catch(e){}
-			try{ if(mo2) mo2.disconnect(); }catch(e){}
-		};
-	}
-	function jitterWatermark(el, player){
-		if(!el || !el.querySelectorAll) return function(){};
-		const tiles = el.querySelectorAll('.video-watermark__tile');
-		if(!tiles.length) return function(){};
-		let timer = null;
-		let paused = false;
-		function jitter(){
-			if(paused || document.hidden) return;
-			if(player && player.paused) return;
-			tiles.forEach(function(tile){
-				const dx = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
-				const dy = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
-				tile.style.setProperty('--dx', dx.toFixed(1)+'px');
-				tile.style.setProperty('--dy', dy.toFixed(1)+'px');
-			});
-		}
-		function schedule(){
-			clearTimeout(timer);
-			const delay = 3000 + Math.random()*2000;
-			timer = setTimeout(function(){ jitter(); schedule(); }, delay);
-		}
-		schedule();
-		function onVis(){
-			if(document.hidden){ paused = true; clearTimeout(timer); }
-			else { paused = false; schedule(); }
-		}
-		document.addEventListener('visibilitychange', onVis);
-		let onPause = null, onPlay = null;
-		if(player){
-			onPause = function(){ clearTimeout(timer); };
-			onPlay = function(){ if(!document.hidden) schedule(); };
-			player.addEventListener('pause', onPause);
-			player.addEventListener('play', onPlay);
-		}
-		return function stop(){
-			clearTimeout(timer);
-			document.removeEventListener('visibilitychange', onVis);
-			if(player && onPause) player.removeEventListener('pause', onPause);
-			if(player && onPlay) player.removeEventListener('play', onPlay);
-		};
-	}
+	// function createWatermark(viewer){
+	// 	const clean = sanitizeViewer(viewer);
+	// 	const wrap = document.createElement('div');
+	// 	wrap.className = 'video-watermark-tiled';
+	// 	wrap.setAttribute('aria-hidden','true');
+	// 	wrap.style.pointerEvents = 'none';
+	// 	const COLS = 5, ROWS = 8;
+	// 	for(let r = 0; r < ROWS; r++){
+	// 		for(let c = 0; c < COLS; c++){
+	// 			const span = document.createElement('span');
+	// 			span.className = 'video-watermark__tile';
+	// 			span.textContent = 'drafted.world | @' + clean;
+	// 			const rot = (Math.random()*8 - 4).toFixed(2);
+	// 			span.style.setProperty('--r', rot + 'deg');
+	// 			span.style.gridRow = String(r + 1);
+	// 			span.style.gridColumn = String(c + 1);
+	// 			wrap.appendChild(span);
+	// 		}
+	// 	}
+	// 	return wrap;
+	// }
+	// function createCanvasWatermark(viewer, stage){
+	// 	const clean = sanitizeViewer(viewer);
+	// 	const text = 'drafted.world | @' + clean;
+	// 	const canvas = document.createElement('canvas');
+	// 	canvas.className = 'video-watermark-canvas';
+	// 	canvas.setAttribute('aria-hidden','true');
+	// 	canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;mix-blend-mode:normal;opacity:1;z-index:2;';
+	// 	let ro = null;
+	// 	let rafId = 0;
+	// 	function draw(){
+	// 		const rect = stage.getBoundingClientRect();
+	// 		if(!rect.width || !rect.height) return;
+	// 		const dpr = window.devicePixelRatio || 1;
+	// 		const ctx = canvas.getContext('2d');
+	// 		if(!ctx) return;
+	// 		ctx.clearRect(0,0,canvas.width,canvas.height);
+	// 		ctx.save();
+	// 		ctx.scale(dpr, dpr);
+	// 	const margin = 10;
+	// 	const COLS = 5, ROWS = 8;
+	// 	const cellW = (rect.width - margin*2) / COLS;
+	// 	const cellH = (rect.height - margin*2) / ROWS;
+	// 	const tiles = [];
+	// 	for(let r = 0; r < ROWS; r++){
+	// 		for(let c = 0; c < COLS; c++){
+	// 			const cx = margin + cellW * c + cellW * 0.5;
+	// 			const cy = margin + cellH * r + cellH * 0.5;
+	// 			const align = c < COLS/2 ? 'left' : 'right';
+	// 			const baseline = r < ROWS/2 ? 'top' : 'bottom';
+	// 			tiles.push({ x: cx, y: cy, align: align, baseline: baseline, font:'600 10px system-ui, -apple-system, sans-serif', alpha:0.60 });
+	// 		}
+	// 	}
+	// 		for(let i=0;i<tiles.length;i++){
+	// 				const t = tiles[i];
+	// 				ctx.save();
+	// 				ctx.font = t.font;
+	// 				ctx.fillStyle = 'rgba(255,255,255,' + t.alpha + ')';
+	// 				ctx.textAlign = t.align;
+	// 				ctx.textBaseline = t.baseline;
+	// 				ctx.translate(t.x, t.y);
+	// 				const rot = (Math.random()*6 - 3) * Math.PI / 180;
+	// 				ctx.rotate(rot);
+	// 				ctx.shadowColor = 'rgba(0,0,0,0.7)';
+	// 				ctx.shadowBlur = 2;
+	// 				ctx.shadowOffsetY = 1;
+	// 				ctx.fillText(text, 0, 0);
+	// 				ctx.restore();
+	// 			}
+	// 		ctx.restore();
+	// 	}
+	// 	function resize(){
+	// 		const rect = stage.getBoundingClientRect();
+	// 		const dpr = window.devicePixelRatio || 1;
+	// 		const w = Math.max(1, Math.floor(rect.width * dpr));
+	// 		const h = Math.max(1, Math.floor(rect.height * dpr));
+	// 		if(canvas.width !== w) canvas.width = w;
+	// 		if(canvas.height !== h) canvas.height = h;
+	// 		canvas.style.width = rect.width + 'px';
+	// 		canvas.style.height = rect.height + 'px';
+	// 		cancelAnimationFrame(rafId);
+	// 		rafId = requestAnimationFrame(draw);
+	// 	}
+	// 	requestAnimationFrame(resize);
+	// 	try{
+	// 		ro = new ResizeObserver(resize);
+	// 		ro.observe(stage);
+	// 	}catch(e){
+	// 		window.addEventListener('resize', resize);
+	// 	}
+	// 	canvas._wmCleanup = function(){
+	// 		cancelAnimationFrame(rafId);
+	// 		if(ro) try{ ro.disconnect(); }catch(e){}
+	// 		window.removeEventListener('resize', resize);
+	// 	};
+	// 	let jitterIv = setInterval(draw, 4000 + Math.random()*2000);
+	// 	canvas._wmJitterCleanup = function(){ clearInterval(jitterIv); };
+	// 	document.addEventListener('visibilitychange', function vis(){
+	// 		if(document.hidden){ clearInterval(jitterIv); }
+	// 		else { clearInterval(jitterIv); jitterIv = setInterval(draw, 4000 + Math.random()*2000); }
+	// 	});
+	// 	return canvas;
+	// }
+	// function hardenWatermark(wrapper, el){
+	// 	if(!wrapper || !el) return function(){};
+	// 	el.style.pointerEvents = 'none';
+	// 	el.style.userSelect = 'none';
+	// 	let restoring = false;
+	// 	function check(){
+	// 		if(restoring) return;
+	// 		const comp = window.getComputedStyle ? window.getComputedStyle(el) : null;
+	// 		const displayNone = comp && comp.display === 'none';
+	// 		const opacityZero = comp && parseFloat(comp.opacity) === 0;
+	// 		const inlineHidden = el.style.display === 'none' || el.style.opacity === '0' || el.hidden;
+	// 		const notConnected = !el.isConnected;
+	// 		const hidden = inlineHidden || displayNone || opacityZero;
+	// 		if(notConnected){
+	// 			restoring = true;
+	// 			try{ wrapper.appendChild(el); }catch(e){}
+	// 			el.style.display = '';
+	// 			el.style.opacity = '';
+	// 			el.hidden = false;
+	// 			el.style.pointerEvents = 'none';
+	// 			el.style.userSelect = 'none';
+	// 			restoring = false;
+	// 		}else if(hidden){
+	// 			restoring = true;
+	// 			el.style.display = '';
+	// 			el.style.opacity = '';
+	// 			el.hidden = false;
+	// 			el.style.pointerEvents = 'none';
+	// 			el.style.userSelect = 'none';
+	// 			// force visible if still computed hidden
+	// 			const comp2 = window.getComputedStyle ? window.getComputedStyle(el) : null;
+	// 			if(comp2 && (comp2.display === 'none' || parseFloat(comp2.opacity) === 0)){
+	// 				if(el.classList.contains('video-watermark-tiled')) el.style.display = 'grid';
+	// 				else el.style.display = 'block';
+	// 				el.style.opacity = wrapper && wrapper.getAttribute('data-watermark') === 'burned' ? '0.03' : '0.09';
+	// 			}
+	// 			restoring = false;
+	// 		}
+	// 	}
+	// 	let mo = null;
+	// 	try{
+	// 		mo = new MutationObserver(function(){ check(); });
+	// 		mo.observe(wrapper, {childList:true, subtree:false, attributes:true, attributeFilter:['style','class','hidden']});
+	// 		mo.observe(el, {attributes:true, attributeFilter:['style','class','hidden']});
+	// 	}catch(e){}
+	// 	let mo2 = null;
+	// 	try{
+	// 		mo2 = new MutationObserver(function(){ if(!el.isConnected) check(); });
+	// 		mo2.observe(document.body, {childList:true, subtree:true});
+	// 	}catch(e){}
+	// 	return function disconnect(){
+	// 		try{ if(mo) mo.disconnect(); }catch(e){}
+	// 		try{ if(mo2) mo2.disconnect(); }catch(e){}
+	// 	};
+	// }
+	// function jitterWatermark(el, player){
+	// 	if(!el || !el.querySelectorAll) return function(){};
+	// 	const tiles = el.querySelectorAll('.video-watermark__tile');
+	// 	if(!tiles.length) return function(){};
+	// 	let timer = null;
+	// 	let paused = false;
+	// 	function jitter(){
+	// 		if(paused || document.hidden) return;
+	// 		if(player && player.paused) return;
+	// 		tiles.forEach(function(tile){
+	// 			const dx = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
+	// 			const dy = (Math.random()*10 + 10) * (Math.random()<0.5?1:-1);
+	// 			tile.style.setProperty('--dx', dx.toFixed(1)+'px');
+	// 			tile.style.setProperty('--dy', dy.toFixed(1)+'px');
+	// 		});
+	// 	}
+	// 	function schedule(){
+	// 		clearTimeout(timer);
+	// 		const delay = 3000 + Math.random()*2000;
+	// 		timer = setTimeout(function(){ jitter(); schedule(); }, delay);
+	// 	}
+	// 	schedule();
+	// 	function onVis(){
+	// 		if(document.hidden){ paused = true; clearTimeout(timer); }
+	// 		else { paused = false; schedule(); }
+	// 	}
+	// 	document.addEventListener('visibilitychange', onVis);
+	// 	let onPause = null, onPlay = null;
+	// 	if(player){
+	// 		onPause = function(){ clearTimeout(timer); };
+	// 		onPlay = function(){ if(!document.hidden) schedule(); };
+	// 		player.addEventListener('pause', onPause);
+	// 		player.addEventListener('play', onPlay);
+	// 	}
+	// 	return function stop(){
+	// 		clearTimeout(timer);
+	// 		document.removeEventListener('visibilitychange', onVis);
+	// 		if(player && onPause) player.removeEventListener('pause', onPause);
+	// 		if(player && onPlay) player.removeEventListener('play', onPlay);
+	// 	};
+	// }
 	// export for testing / external use
-	try{
-		if(typeof window !== 'undefined'){
-			window.sanitizeViewer = sanitizeViewer;
-			window.createWatermark = createWatermark;
-			window.createCanvasWatermark = createCanvasWatermark;
-			window.hardenWatermark = hardenWatermark;
-			window.jitterWatermark = jitterWatermark;
-		}
-	}catch(e){}
+	// try{
+	// 	if(typeof window !== 'undefined'){
+	// 		window.sanitizeViewer = sanitizeViewer;
+	// 		window.createWatermark = createWatermark;
+	// 		window.createCanvasWatermark = createCanvasWatermark;
+	// 		window.hardenWatermark = hardenWatermark;
+	// 		window.jitterWatermark = jitterWatermark;
+	// 	}
+	// }catch(e){}
 
 	function parseSignedParams(videoUrl){
 		try{
@@ -556,7 +556,7 @@ async function loadVideos(){
 				if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
 				if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
 				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
-				try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
+				// try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
 				let finalSrc = personalizedUrl;
 					if(finalSrc && finalSrc.startsWith('/') && apiBase) finalSrc = apiBase + finalSrc;
 					const curSrc = player.src || '';
@@ -801,10 +801,10 @@ async function loadVideos(){
 					if(!d) return;
 					const u2 = d.user || d;
 					let v2 = (u2 && (u2.displayName || u2.username || u2.discordName || u2.discord || u2.name || u2.viewer)) || d.viewer || d.displayName || '';
-					if(v2){
+				if(v2){
 						const clean2 = sanitizeViewer(v2);
 					try{
-						const tiles = document.querySelectorAll('.video-watermark__tile');
+						// const tiles = document.querySelectorAll('.video-watermark__tile');
 						if(!String(viewerName).trim()) viewerName = clean2;
 						}catch(e){}
 					}
@@ -940,15 +940,15 @@ async function loadVideos(){
                 modal.classList.add('hidden');
                 modal.classList.remove('is-maximized');
                 document.body.style.overflow = '';
-                try{ player.pause(); }catch(e){}
-            try{ if(modal._unharden) modal._unharden(); modal._unharden=null; }catch(e){}
-                try{ if(modal._stopJitter) modal._stopJitter(); modal._stopJitter=null; }catch(e){}
-                try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); modal._unhardenCanvas=null; }catch(e){}
-                try{ if(modal._wmCleanup) modal._wmCleanup(); modal._wmCleanup=null; }catch(e){}
+            try{ player.pause(); }catch(e){}
+            // try{ if(modal._unharden) modal._unharden(); modal._unharden=null; }catch(e){}
+                // try{ if(modal._stopJitter) modal._stopJitter(); modal._stopJitter=null; }catch(e){}
+                // try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); modal._unhardenCanvas=null; }catch(e){}
+                // try{ if(modal._wmCleanup) modal._wmCleanup(); modal._wmCleanup=null; }catch(e){}
                 try{ if(modal._cancelPoll) modal._cancelPoll(); modal._cancelPoll=null; }catch(e){}
-            try{
-                stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); });
-                }catch(e){}
+            // try{
+            //     stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); });
+            //     }catch(e){}
             }
             window._closeVideoModal = closeModal;
             if(backdrop) backdrop.addEventListener('click', closeModal);
@@ -1026,20 +1026,21 @@ async function loadVideos(){
             }
             try{ player.load(); }catch(e){}
             if(loader) loader.classList.remove('hidden');
-            try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
+            // try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
             // cleanup previous
-            try{ if(modal._unharden) modal._unharden(); }catch(e){}
-            try{ if(modal._stopJitter) modal._stopJitter(); }catch(e){}
-            try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); }catch(e){}
+            // try{ if(modal._unharden) modal._unharden(); }catch(e){}
+            // try{ if(modal._stopJitter) modal._stopJitter(); }catch(e){}
+            // try{ if(modal._unhardenCanvas) modal._unhardenCanvas(); }catch(e){}
             try{ if(modal._cancelPoll) modal._cancelPoll(); }catch(e){}
-            const useCanvas = (function(){ try{ return new URLSearchParams(location.search).has('canvas'); }catch(e){ return false; } })();
-            let watermark = null;
-            let canvasLayer = null;
-            if(useCanvas){
-                try{ canvasLayer = createCanvasWatermark(viewerName, stage); stage.appendChild(canvasLayer); modal._unhardenCanvas = hardenWatermark(modal, canvasLayer); if(canvasLayer && canvasLayer._wmCleanup) modal._wmCleanup = canvasLayer._wmCleanup; }catch(e){}
-            } else {
-                try{ watermark = createWatermark(viewerName); stage.appendChild(watermark); modal._unharden = hardenWatermark(stage, watermark); modal._stopJitter = jitterWatermark(watermark, player); }catch(e){}
-            }
+            // Client-side CSS watermark disabled — rely on server-side FFmpeg burned watermark only
+            // const useCanvas = (function(){ try{ return new URLSearchParams(location.search).has('canvas'); }catch(e){ return false; } })();
+            // let watermark = null;
+            // let canvasLayer = null;
+            // if(useCanvas){
+            //     try{ canvasLayer = createCanvasWatermark(viewerName, stage); stage.appendChild(canvasLayer); modal._unhardenCanvas = hardenWatermark(modal, canvasLayer); if(canvasLayer && canvasLayer._wmCleanup) modal._wmCleanup = canvasLayer._wmCleanup; }catch(e){}
+            // } else {
+            //     try{ watermark = createWatermark(viewerName); stage.appendChild(watermark); modal._unharden = hardenWatermark(stage, watermark); modal._stopJitter = jitterWatermark(watermark, player); }catch(e){}
+            // }
             try{
                 if(!video.personalizedUrl){
                     modal._cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: stage, viewer: viewerName});
@@ -1240,24 +1241,24 @@ async function loadVideos(){
                                 }
                             }catch(e){}
                         }
-                        if(stageEl) stageEl.addEventListener('dblclick', function(e){ e.preventDefault(); toggleWrapperFs(); });
+                    if(stageEl) stageEl.addEventListener('dblclick', function(e){ e.preventDefault(); toggleWrapperFs(); });
                         if(player) player.addEventListener('dblclick', function(e){ e.preventDefault(); e.stopPropagation(); toggleWrapperFs(); });
-                    function ensureWatermarkVisible(){
-                            try{
-                                const wm = stageEl ? stageEl.querySelector('.video-watermark-tiled,.video-watermark-canvas') : null;
-                                if(wm){
-                                    if(wm.classList.contains('video-watermark-tiled')) wm.style.display='grid'; else wm.style.display='block';
-                                    wm.style.opacity='';
-                                    wm.style.visibility='visible';
-                                    wm.style.pointerEvents='none';
-                                }
-                            }catch(e){}
-                        }
-                        ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(function(evt){
-                            document.addEventListener(evt, ensureWatermarkVisible);
-                        });
-                        player.addEventListener('pause', ensureWatermarkVisible);
-                        player.addEventListener('play', ensureWatermarkVisible);
+                    // function ensureWatermarkVisible(){
+                    //     try{
+                    //         const wm = stageEl ? stageEl.querySelector('.video-watermark-tiled,.video-watermark-canvas') : null;
+                    //         if(wm){
+                    //             if(wm.classList.contains('video-watermark-tiled')) wm.style.display='grid'; else wm.style.display='block';
+                    //             wm.style.opacity='';
+                    //             wm.style.visibility='visible';
+                    //             wm.style.pointerEvents='none';
+                    //         }
+                    //     }catch(e){}
+                    // }
+                    // ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(function(evt){
+                    //     document.addEventListener(evt, ensureWatermarkVisible);
+                    // });
+                    // player.addEventListener('pause', ensureWatermarkVisible);
+                    // player.addEventListener('play', ensureWatermarkVisible);
                     }catch(e){}
                     // also handle stage fullscreen for video itself fallback
                     updatePlayIcon(false);
