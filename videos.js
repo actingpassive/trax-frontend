@@ -529,7 +529,7 @@ async function loadVideos(){
 				if(res.ok){
 					let data = null;
 					try{ data = await res.json(); }catch(e){}
-					const isHit = cacheHeader === 'HIT' || watermarkHeader === 'burned' || (data && Array.isArray(data.segments) && data.segments.length>0);
+					const isHit = (cacheHeader === 'HIT' && watermarkHeader === 'burned') || watermarkHeader === 'burned' || (data && data.personalized === true && Array.isArray(data.segments) && data.segments.length > 0);
 				if(!isHit){
 						// Still pending — update non-blocking notice but DO NOT change src
 						const label = '~' + Math.max(5, Math.ceil((MAX_MS - (Date.now()-startMs))/1000)) + 's';
