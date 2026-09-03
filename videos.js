@@ -92,6 +92,7 @@ async function loadVideos(){
 				const wasActive = btn.classList.contains('is-active');
 				const next = wasActive ? '' : (btn.dataset.topic || '');
 				filterTopic = next;
+				populateFilterTopic();
 				persistFilter();
 				applyFilterAndRender();
 			});
