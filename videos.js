@@ -428,6 +428,8 @@ async function loadVideos(){
 			}
 			return function(){};
 		}
+		// deferred video source — set only after personalized confirmation
+		const pendingVideoUrl = ctx.pendingVideoUrl || '';
 		const parsed = parseSignedParams(video.url);
 		if(!parsed.expires || !parsed.signature) return function(){};
 		const _accessToken = window.__traxAccessToken || '';
@@ -559,6 +561,7 @@ async function loadVideos(){
 				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
 				// try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
 				let finalSrc = personalizedUrl;
+					if(!finalSrc && pendingVideoUrl) finalSrc = pendingVideoUrl;
 					if(finalSrc && finalSrc.startsWith('/') && apiBase) finalSrc = apiBase + finalSrc;
 					const curSrc = player.src || '';
 					function stripBase(s){ try{ const u=new URL(s, location.origin); return u.pathname+u.search; }catch(e){ return s; } }
@@ -578,9 +581,9 @@ async function loadVideos(){
 									if(wasPlaying){ player.play().catch(function(){}); }
 								};
 								player.addEventListener('loadedmetadata', restoreSeek);
-							} else if(wasPlaying){
-								player.play().catch(function(){});
-							}
+						} else {
+							player.play().catch(function(){});
+						}
 						}catch(e){}
 					} else {
 						if(notice && notice.isConnected) try{ notice.remove(); }catch(e){}
@@ -1017,16 +1020,15 @@ async function loadVideos(){
             player.controls = false;
             if(video.thumbnail) player.poster = apiBase + video.thumbnail;
             else { const svgUrl = svgPosterDataUrl(video); if(svgUrl) player.poster = svgUrl; }
-            // source
-            let src = video.url || '';
-            if(src){
-                const hasBase = String(src).startsWith('http') || String(src).startsWith('/');
-                if(hasBase && String(src).startsWith('/')) src = apiBase + src;
-                else if(!hasBase) src = apiBase + '/' + String(src).replace(/^\//,'');
-                if(String(src).includes('/manifest')) src = video.url || src;
-                player.src = String(src);
+            // Don't set video source yet — wait for personalized manifest
+            // Store the generic URL for later use after personalized check
+            let pendingVideoUrl = video.url || '';
+            if(pendingVideoUrl){
+                const hasBase = String(pendingVideoUrl).startsWith('http') || String(pendingVideoUrl).startsWith('/');
+                if(hasBase && String(pendingVideoUrl).startsWith('/')) pendingVideoUrl = apiBase + pendingVideoUrl;
+                else if(!hasBase) pendingVideoUrl = apiBase + '/' + String(pendingVideoUrl).replace(/^\//,'');
+                if(String(pendingVideoUrl).includes('/manifest')) pendingVideoUrl = video.url || pendingVideoUrl;
             }
-            try{ player.load(); }catch(e){}
             if(loader) loader.classList.remove('hidden');
             // try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
             // cleanup previous
@@ -1045,7 +1047,7 @@ async function loadVideos(){
             // }
             try{
                 if(!video.personalizedUrl){
-                    modal._cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: stage, viewer: viewerName});
+                    modal._cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: stage, viewer: viewerName, pendingVideoUrl: pendingVideoUrl});
                 }
             }catch(e){}
             // loader hide on canplay
@@ -1055,8 +1057,7 @@ async function loadVideos(){
             // also hide on error
             function onError(){ if(loader) loader.classList.add('hidden'); }
             player.addEventListener('error', onError, {once:true});
-            // auto play
-            player.play().catch(function(){});
+            // Don't auto-play yet — deferred until personalized manifest confirms
             // bind controls once (if not already)
             if(!modal._controlsBound){
                 modal._controlsBound = true;
