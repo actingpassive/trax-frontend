@@ -1011,6 +1011,10 @@ async function loadVideos(){
             // show modal
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+            // Show controls briefly when player opens so user knows they exist
+            modal.classList.add('is-controls-visible');
+            clearTimeout(modal._controlsShowTimer);
+            modal._controlsShowTimer = setTimeout(function(){ modal.classList.remove('is-controls-visible'); }, 3000);
             // reset player
             try{ player.pause(); }catch(e){}
             player.preload = 'metadata';
