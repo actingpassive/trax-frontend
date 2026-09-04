@@ -1206,6 +1206,7 @@ async function loadVideos(){
                     });
                     if(timeline){
                         timeline.style.touchAction='none';
+                        let lastScrubEnd = 0;
                         const handlePointerDown = function(e){
                             if(e.button!==undefined && e.button!==0) return;
                             isScrubbing=true;
@@ -1231,11 +1232,12 @@ async function loadVideos(){
                                 seekToPct(pct);
                             }
                             isScrubbing=false;
+                            lastScrubEnd = Date.now();
                             if(timeline) timeline.classList.remove('is-dragging');
                             if(wasPlayingBeforeScrub){ try{ player.play().catch(function(){});}catch(e2){} wasPlayingBeforeScrub=false; }
                         });
                         timeline.addEventListener('click', function(e){
-                            if(e.target===range) return;
+                            if(Date.now() - lastScrubEnd < 300) { e.preventDefault(); return; }
                             if(!isScrubbing){
                                 const pct=pctFromClientX(e.clientX);
                                 seekToPct(pct);

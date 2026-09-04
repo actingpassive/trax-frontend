@@ -305,7 +305,7 @@ body::before{
   height:100%;
   opacity:0;
   cursor:pointer;
-  z-index:3;
+  z-index:0;
   -webkit-appearance:none;
   appearance:none;
   background:transparent;
