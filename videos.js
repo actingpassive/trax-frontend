@@ -591,10 +591,30 @@ async function loadVideos(){
 					}
 					return;
 				}
-				// 401/403/404 etc -> treat as fallback to generic (remove notice if any)
+			// 401/403/404 etc -> show login message or remove notice
+			if(res.status === 401 || res.status === 403){
+				ensureNotice('');
 				if(notice && notice.isConnected){
-				notice.remove();
+					const badge = notice.querySelector('.personalizing-notice__badge');
+					if(badge) badge.textContent = 'Sign in required';
+					const sub = notice.querySelector('.personalizing-notice__sub');
+					if(sub) sub.textContent = 'Please sign in with Discord to watch videos';
+					const bar = notice.querySelector('.personalizing-notice__bar');
+					if(bar) bar.style.display = 'none';
+					const cd = notice.querySelector('.personalizing-notice__countdown');
+					if(cd) cd.textContent = '';
+					notice.style.cursor = 'pointer';
+					notice.style.pointerEvents = 'auto';
+					notice.title = 'Click to sign in';
+					notice.addEventListener('click', function(){
+						window.location.href = apiBase + '/auth/discord';
+					}, {once:true});
 				}
+				return;
+			}
+			if(notice && notice.isConnected){
+				notice.remove();
+			}
 			}catch(e){
 			if(notice && notice.isConnected) updateNoticeProgress(null);
 				const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
