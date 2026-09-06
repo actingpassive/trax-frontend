@@ -17,6 +17,7 @@ async function loadVideos(){
 	const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
 	let loadedVideos = [];
 	let filteredVideos = [];
+	let accessGranted = false;
 	let filterDay = '';
 	let filterTopic = '';
 	function showAccessDenied(){
@@ -1013,6 +1014,7 @@ async function loadVideos(){
         // keep cache in sync if filteredVideos changes (re-render will re-setup)
         try{ window._modalVideos = filteredVideos; }catch(e){}
         function openVideoModalAt(idx){
+			if(!accessGranted) return;
             const modalObj = window._videoModal;
             if(!modalObj) return;
             const modal = modalObj.modal;
@@ -1062,6 +1064,12 @@ async function loadVideos(){
                 if(String(pendingVideoUrl).includes('/manifest')) pendingVideoUrl = video.url || pendingVideoUrl;
             }
             if(loader) loader.classList.remove('hidden');
+			clearTimeout(modal._loadTimeout);
+			modal._loadTimeout = setTimeout(function(){
+				if(loader && !loader.classList.contains('hidden')){
+					loader.textContent = 'Unable to load video. Please try again.';
+				}
+			}, 15000);
             // try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
             // cleanup previous
             // try{ if(modal._unharden) modal._unharden(); }catch(e){}
@@ -1083,11 +1091,11 @@ async function loadVideos(){
                 }
             }catch(e){}
             // loader hide on canplay
-            function onCanPlay(){ if(loader) loader.classList.add('hidden'); player.removeEventListener('canplay', onCanPlay); player.removeEventListener('loadeddata', onCanPlay); }
+			function onCanPlay(){ clearTimeout(modal._loadTimeout); if(loader) loader.classList.add('hidden'); player.removeEventListener('canplay', onCanPlay); player.removeEventListener('loadeddata', onCanPlay); }
             player.addEventListener('canplay', onCanPlay);
             player.addEventListener('loadeddata', onCanPlay);
             // also hide on error
-            function onError(){ if(loader) loader.classList.add('hidden'); }
+			function onError(){ clearTimeout(modal._loadTimeout); if(loader) loader.textContent = 'Unable to load video. Please try again.'; }
             player.addEventListener('error', onError, {once:true});
             // Don't auto-play yet — deferred until personalized manifest confirms
             // bind controls once (if not already)
@@ -1391,6 +1399,7 @@ list.replaceChildren(...articles);
 		loadedVideos = await response.json();
 		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
 		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+		accessGranted = true;
 		if(accessDenied) accessDenied.hidden = true;
 		memberSurface.forEach(function(el){ el.hidden = false; });
 		initFilters();
