@@ -1104,6 +1104,13 @@ async function loadVideos(){
             // also hide on error
 			function onError(){ clearTimeout(modal._loadTimeout); if(loader) loader.textContent = 'Unable to load video. Please try again.'; }
             player.addEventListener('error', onError, {once:true});
+			modal._cancelPoll = fetchPersonalizedManifest(video, {
+				player: player,
+				stage: stage,
+				wrapper: stage,
+				viewer: viewerName,
+				pendingVideoUrl: pendingVideoUrl
+			});
             // Don't auto-play yet — deferred until personalized manifest confirms
             // bind controls once (if not already)
             if(!modal._controlsBound){
