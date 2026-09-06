@@ -441,17 +441,19 @@ async function loadVideos(){
 		}
 		// deferred video source — set only after personalized confirmation
 		const pendingVideoUrl = ctx.pendingVideoUrl || '';
-		const parsed = parseSignedParams(video.url);
-		if(!parsed.expires || !parsed.signature) return function(){};
-		// The signed media URL is the playback source. Personalization must never block it.
+		// The signed media URL is the playback source. Personalization must never block it:
+		// set it first so the video plays even if the URL has no signable params.
 		if(pendingVideoUrl){
 			try{
 				player.removeAttribute('src');
 				player.setAttribute('src', pendingVideoUrl);
 				player.controls = false;
 				player.load();
+				player.play().catch(function(){});
 			}catch(e){}
 		}
+		const parsed = parseSignedParams(video.url);
+		if(!parsed.expires || !parsed.signature) return function(){};
 		const _accessToken = window.__traxAccessToken || '';
 		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
@@ -1311,6 +1313,18 @@ async function loadVideos(){
                     updateVolumeIcon();
                 })();
             }
+            // Start playback on EVERY open (not only first bind above): set the
+            // generic signed src immediately, then upgrade to the personalized
+            // burn when its manifest reports HIT.
+            try{
+                modal._cancelPoll = fetchPersonalizedManifest(video, {
+                    player: player,
+                    stage: stage,
+                    wrapper: stage,
+                    viewer: viewerName,
+                    pendingVideoUrl: pendingVideoUrl
+                });
+            }catch(e){}
         }
         window.openVideoModalAt = openVideoModalAt;
         // keep global for hero click
