@@ -91,15 +91,7 @@ document.getElementById('homework-files').addEventListener('change', async e => 
   try {
     const response = await fetch(`${API}/api/upload`, { method: 'POST', body: form, credentials: 'include' });
     status.textContent = response.ok ? 'Submitted to private review.' : 'Submission failed. Please try again.';
-    if (response.ok) {
-      input.value = '';
-      fetch(`${API}/api/dashboard/homework-complete`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'include',
-        body: JSON.stringify({title: title.textContent})
-      }).catch(() => {});
-    }
+    if (response.ok) input.value = '';
   } finally {
     input.disabled = false;
   }

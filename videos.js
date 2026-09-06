@@ -1171,14 +1171,6 @@ async function loadVideos(){
                         if(thumb) thumb.style.left=pct+'%';
                         syncTimeLabels(cur,dur);
                     });
-					player.addEventListener('ended', function(){
-						fetch(`${apiBase}/api/dashboard/video-complete`, {
-							method:'POST',
-							headers:{'Content-Type':'application/json'},
-							credentials:'include',
-							body:JSON.stringify({videoId: video.id})
-						}).catch(function(){});
-					});
                     player.addEventListener('loadedmetadata', function(){
                         const dur=player.duration||0;
                         const cur=player.currentTime||0;
