@@ -6,6 +6,11 @@
   <!-- Change this meta when backend is hosted (e.g. https://api.yourdomain.com) -->
   <meta name="api-base" content="https://api.drafted.world">
   <title>drafted</title>
+  <script>
+    if (location.pathname.endsWith('/index.html')) {
+      location.replace('./' + location.search + location.hash);
+    }
+  </script>
   <link rel="stylesheet" href="style.css?v=20260906">
 </head>
 <body>
