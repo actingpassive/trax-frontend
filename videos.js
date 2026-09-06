@@ -612,23 +612,9 @@ async function loadVideos(){
 				}
 			// 401/403/404 etc -> show login message or remove notice
 			if(res.status === 401 || res.status === 403){
-				ensureNotice('');
-				if(notice && notice.isConnected){
-					const badge = notice.querySelector('.personalizing-notice__badge');
-					if(badge) badge.textContent = 'Sign in required';
-					const sub = notice.querySelector('.personalizing-notice__sub');
-					if(sub) sub.textContent = 'Please sign in with Discord to watch videos';
-					const bar = notice.querySelector('.personalizing-notice__bar');
-					if(bar) bar.style.display = 'none';
-					const cd = notice.querySelector('.personalizing-notice__countdown');
-					if(cd) cd.textContent = '';
-					notice.style.cursor = 'pointer';
-					notice.style.pointerEvents = 'auto';
-					notice.title = 'Click to sign in';
-					notice.addEventListener('click', function(){
-						window.location.href = apiBase + '/auth/discord';
-					}, {once:true});
-				}
+				// The signed generic source is already loaded and remains playable.
+				// Personalization is optional, so do not replace it with a false auth error.
+				if(notice && notice.isConnected) notice.remove();
 				return;
 			}
 			if(notice && notice.isConnected){
@@ -1294,19 +1280,25 @@ async function loadVideos(){
                         try{ localStorage.setItem('trax-player-muted',String(player.muted)); }catch(e){}
                         updateVolumeIcon();
                     });
-                    if(fullscreenBtn) fullscreenBtn.addEventListener('click', function(){
-                        const modalEl = document.getElementById('videoModal');
-                        if(!modalEl) return;
-                        modalEl.classList.toggle('is-maximized');
-                        try{
-                            const fsIcon = fullscreenBtn.querySelector('svg');
-                            if(fsIcon && modalEl.classList.contains('is-maximized')){
-                                fsIcon.innerHTML = '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>';
-                            } else if(fsIcon){
-                                fsIcon.innerHTML = '<path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/>';
-                            }
-                        }catch(e){}
-                    });
+					if(fullscreenBtn) fullscreenBtn.addEventListener('click', async function(){
+						const modalEl = document.getElementById('videoModal');
+						const target = modalEl;
+						if(!target) return;
+						try{
+							if(document.fullscreenElement || document.webkitFullscreenElement){
+								if(document.exitFullscreen) await document.exitFullscreen();
+								else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+							} else if(target.requestFullscreen) {
+								await target.requestFullscreen();
+							} else if(target.webkitRequestFullscreen) {
+								target.webkitRequestFullscreen();
+							} else {
+								modalEl.classList.toggle('is-maximized');
+								return;
+							}
+						}catch(e){ modalEl.classList.toggle('is-maximized'); return; }
+						modalEl.classList.toggle('is-maximized', Boolean(document.fullscreenElement || document.webkitFullscreenElement));
+					});
                     try{
                         const stageEl = document.getElementById('videoModalStage');
                         const modalEl2 = document.getElementById('videoModal');
