@@ -20,7 +20,7 @@ async function refreshAuth(){
     const logoutBtn = document.getElementById('logout-btn');
     if(j.user){
       const allowed = j.isOwner || j.isWhitelisted;
-      const safeName = String(j.user.username || '').slice(0,32);
+      const safeName = String(j.user.displayName || j.user.username || j.user.global_name || j.user.discordName || j.user.name || '').trim().slice(0,32);
       if(welcomeName) welcomeName.textContent = safeName || 'trader.';
       if(j.user.avatar && isSafeAvatarUrl(j.user.avatar)){
         const img = document.createElement('img');
