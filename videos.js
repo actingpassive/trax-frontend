@@ -443,6 +443,14 @@ async function loadVideos(){
 		const pendingVideoUrl = ctx.pendingVideoUrl || '';
 		const parsed = parseSignedParams(video.url);
 		if(!parsed.expires || !parsed.signature) return function(){};
+		// The signed media URL is already authorized and can play while the optional
+		// personalized copy is generated in the background.
+		if(pendingVideoUrl && !player.src){
+			try{
+				player.src = pendingVideoUrl;
+				player.load();
+			}catch(e){}
+		}
 		const _accessToken = window.__traxAccessToken || '';
 		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
