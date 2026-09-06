@@ -647,8 +647,6 @@ async function loadVideos(){
 		}catch(e){ return ''; }
 	}
 
-	initFilters();
-
 	function updateCount(n){
 		if(!countEl) return;
 		if(n === null || n === undefined || n === '—'){ countEl.textContent = '—'; return; }
@@ -1387,6 +1385,8 @@ list.replaceChildren(...articles);
 		loadedVideos = await response.json();
 		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
 		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = false; });
+		initFilters();
 		await renderVideos();
 		document.addEventListener('visibilitychange', function(){
 			if(document.hidden) list.querySelectorAll('video').forEach(function(p){ p.pause(); });

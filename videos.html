@@ -16,7 +16,7 @@
 			<h2>Videos</h2>
 			<span id="videoCount" class="card-sub">—</span>
 		</div>
-		<div class="video-filters" data-member-only role="toolbar" aria-label="Filter videos">
+		<div class="video-filters" data-member-only hidden role="toolbar" aria-label="Filter videos">
 			<div class="filter-row filter-row--days">
 				<span class="filter-row__label" aria-hidden="true">Day</span>
 				<div class="day-pills" id="dayPills" role="group" aria-label="Filter by Day">
@@ -36,7 +36,7 @@
 		<!-- hero removed — thumbnail grid only -->
 		<p id="video-status" class="lede">Loading videos...</p>
 		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
-		<section id="videoGrid" class="sections video-list" data-member-only aria-live="polite" aria-label="Video thumbnail grid"></section>
+		<section id="videoGrid" class="sections video-list" data-member-only hidden aria-live="polite" aria-label="Video thumbnail grid"></section>
 	</main>
 
 	<div id="videoModal" class="video-modal hidden" aria-labelledby="videoModalTitle">
