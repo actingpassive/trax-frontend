@@ -443,11 +443,12 @@ async function loadVideos(){
 		const pendingVideoUrl = ctx.pendingVideoUrl || '';
 		const parsed = parseSignedParams(video.url);
 		if(!parsed.expires || !parsed.signature) return function(){};
-		// The signed media URL is already authorized and can play while the optional
-		// personalized copy is generated in the background.
-		if(pendingVideoUrl && !player.src){
+		// The signed media URL is the playback source. Personalization must never block it.
+		if(pendingVideoUrl){
 			try{
-				player.src = pendingVideoUrl;
+				player.removeAttribute('src');
+				player.setAttribute('src', pendingVideoUrl);
+				player.controls = false;
 				player.load();
 			}catch(e){}
 		}
@@ -1094,9 +1095,7 @@ async function loadVideos(){
             //     try{ watermark = createWatermark(viewerName); stage.appendChild(watermark); modal._unharden = hardenWatermark(stage, watermark); modal._stopJitter = jitterWatermark(watermark, player); }catch(e){}
             // }
             try{
-                if(!video.personalizedUrl){
-                    modal._cancelPoll = fetchPersonalizedManifest(video, {player: player, stage: stage, wrapper: stage, viewer: viewerName, pendingVideoUrl: pendingVideoUrl});
-                }
+				// Do not replace the working signed source with a queued personalized stream.
             }catch(e){}
             // loader hide on canplay
 			function onCanPlay(){ clearTimeout(modal._loadTimeout); if(loader) loader.classList.add('hidden'); player.removeEventListener('canplay', onCanPlay); player.removeEventListener('loadeddata', onCanPlay); }
