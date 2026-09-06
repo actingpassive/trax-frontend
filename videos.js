@@ -452,20 +452,6 @@ async function loadVideos(){
 				player.load();
 			}catch(e){}
 		}
-		let clientWatermark = null;
-		function ensureClientWatermark(){
-			if(clientWatermark && clientWatermark.isConnected) return;
-			clientWatermark = document.createElement('div');
-			clientWatermark.className = 'video-client-watermark';
-			clientWatermark.setAttribute('aria-hidden', 'true');
-			clientWatermark.textContent = 'drafted.world | @' + sanitizeViewer(viewer);
-			stage.appendChild(clientWatermark);
-		}
-		function removeClientWatermark(){
-			if(clientWatermark && clientWatermark.parentNode) clientWatermark.remove();
-			clientWatermark = null;
-		}
-		ensureClientWatermark();
 		const _accessToken = window.__traxAccessToken || '';
 		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
@@ -590,7 +576,6 @@ async function loadVideos(){
 						if(fill) fill.style.width = '100%';
 						setTimeout(function(){ if(notice && notice.parentNode) notice.remove(); }, 650);
 					}
-				removeClientWatermark();
 				if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
 				if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
 				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
@@ -627,9 +612,23 @@ async function loadVideos(){
 				}
 			// 401/403/404 etc -> show login message or remove notice
 			if(res.status === 401 || res.status === 403){
-				// The signed generic source is already loaded and remains playable.
-				// Personalization is optional, so do not replace it with a false auth error.
-				if(notice && notice.isConnected) notice.remove();
+				ensureNotice('');
+				if(notice && notice.isConnected){
+					const badge = notice.querySelector('.personalizing-notice__badge');
+					if(badge) badge.textContent = 'Sign in required';
+					const sub = notice.querySelector('.personalizing-notice__sub');
+					if(sub) sub.textContent = 'Please sign in with Discord to watch videos';
+					const bar = notice.querySelector('.personalizing-notice__bar');
+					if(bar) bar.style.display = 'none';
+					const cd = notice.querySelector('.personalizing-notice__countdown');
+					if(cd) cd.textContent = '';
+					notice.style.cursor = 'pointer';
+					notice.style.pointerEvents = 'auto';
+					notice.title = 'Click to sign in';
+					notice.addEventListener('click', function(){
+						window.location.href = apiBase + '/auth/discord';
+					}, {once:true});
+				}
 				return;
 			}
 			if(notice && notice.isConnected){
@@ -645,7 +644,7 @@ async function loadVideos(){
 			pollTimer = setTimeout(poll, delay);
 		}
 		poll();
-		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} removeClientWatermark(); };
+		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
 	}
 	if(typeof window !== 'undefined') window.fetchPersonalizedManifest = fetchPersonalizedManifest;
 
@@ -1056,12 +1055,9 @@ async function loadVideos(){
             modal._controlsShowTimer = setTimeout(function(){ modal.classList.remove('is-controls-visible'); }, 3000);
             // reset player
             try{ player.pause(); }catch(e){}
-			player.removeAttribute('src');
-			player.load();
             player.preload = 'metadata';
-			// Signed media URLs authenticate through their query string; forcing
-			// credentialed CORS can make otherwise playable CDN video fail.
-			player.removeAttribute('crossorigin');
+            player.crossOrigin = 'use-credentials';
+            player.setAttribute('crossorigin','use-credentials');
             player.playsInline = true;
             player.setAttribute('playsinline','');
             player.controls = false;
@@ -1108,13 +1104,6 @@ async function loadVideos(){
             // also hide on error
 			function onError(){ clearTimeout(modal._loadTimeout); if(loader) loader.textContent = 'Unable to load video. Please try again.'; }
             player.addEventListener('error', onError, {once:true});
-			modal._cancelPoll = fetchPersonalizedManifest(video, {
-				player: player,
-				stage: stage,
-				wrapper: stage,
-				viewer: viewerName,
-				pendingVideoUrl: pendingVideoUrl
-			});
             // Don't auto-play yet — deferred until personalized manifest confirms
             // bind controls once (if not already)
             if(!modal._controlsBound){
@@ -1298,25 +1287,19 @@ async function loadVideos(){
                         try{ localStorage.setItem('trax-player-muted',String(player.muted)); }catch(e){}
                         updateVolumeIcon();
                     });
-					if(fullscreenBtn) fullscreenBtn.addEventListener('click', async function(){
-						const modalEl = document.getElementById('videoModal');
-						const target = modalEl;
-						if(!target) return;
-						try{
-							if(document.fullscreenElement || document.webkitFullscreenElement){
-								if(document.exitFullscreen) await document.exitFullscreen();
-								else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-							} else if(target.requestFullscreen) {
-								await target.requestFullscreen();
-							} else if(target.webkitRequestFullscreen) {
-								target.webkitRequestFullscreen();
-							} else {
-								modalEl.classList.toggle('is-maximized');
-								return;
-							}
-						}catch(e){ modalEl.classList.toggle('is-maximized'); return; }
-						modalEl.classList.toggle('is-maximized', Boolean(document.fullscreenElement || document.webkitFullscreenElement));
-					});
+                    if(fullscreenBtn) fullscreenBtn.addEventListener('click', function(){
+                        const modalEl = document.getElementById('videoModal');
+                        if(!modalEl) return;
+                        modalEl.classList.toggle('is-maximized');
+                        try{
+                            const fsIcon = fullscreenBtn.querySelector('svg');
+                            if(fsIcon && modalEl.classList.contains('is-maximized')){
+                                fsIcon.innerHTML = '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>';
+                            } else if(fsIcon){
+                                fsIcon.innerHTML = '<path d="M3 9V5h4M21 9V5h-4M3 15v4h4M21 15v4h-4"/>';
+                            }
+                        }catch(e){}
+                    });
                     try{
                         const stageEl = document.getElementById('videoModalStage');
                         const modalEl2 = document.getElementById('videoModal');
