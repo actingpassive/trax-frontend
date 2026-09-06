@@ -439,21 +439,38 @@ async function loadVideos(){
 			}
 			return function(){};
 		}
-		// deferred video source — set only after personalized confirmation
+		// Manifest-first flow: the generic /media/:id URL 404s with
+		// personalized_not_ready while the per-viewer burn is still queuing, so
+		// never set it upfront — probe the manifest first and only set a source
+		// that will actually play.
 		const pendingVideoUrl = ctx.pendingVideoUrl || '';
-		// The signed media URL is the playback source. Personalization must never block it:
-		// set it first so the video plays even if the URL has no signable params.
-		if(pendingVideoUrl){
+		const modal = ctx.modal || null;
+		const loader = ctx.loader || null;
+		function showLoader(){
+			if(!loader) return;
+			loader.classList.remove('hidden');
+			const s = loader.querySelector('span');
+			if(s) s.textContent = 'Loading…';
+		}
+		function hideLoader(){ if(loader) loader.classList.add('hidden'); }
+		function setPlaying(src){
+			if(!src) return false;
 			try{
 				player.removeAttribute('src');
-				player.setAttribute('src', pendingVideoUrl);
+				player.setAttribute('src', src);
 				player.controls = false;
 				player.load();
 				player.play().catch(function(){});
-			}catch(e){}
+			}catch(e){ return false; }
+			return true;
 		}
 		const parsed = parseSignedParams(video.url);
-		if(!parsed.expires || !parsed.signature) return function(){};
+		if(!parsed.expires || !parsed.signature){
+			// No signable params — manifest polling impossible, best effort on generic URL.
+			if(modal) modal._personalizing = false;
+			if(pendingVideoUrl){ showLoader(); setPlaying(pendingVideoUrl); }
+			return function(){};
+		}
 		const _accessToken = window.__traxAccessToken || '';
 		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
@@ -515,6 +532,7 @@ async function loadVideos(){
 		async function poll(){
 			if(cancelled) return;
 			if(Date.now() - startMs > MAX_MS){
+				if(modal) modal._personalizing = false;
 				if(notice && notice.isConnected){
 					const title = notice.querySelector('.personalizing-notice__badge');
 					if(title) title.textContent = 'Still personalizing\u2026';
@@ -541,8 +559,10 @@ async function loadVideos(){
 					try{ data = await res.json(); }catch(e){}
 					const qp = data && (data.queuePosition||data.queue||data.position||data.queue_number);
 					const est = data && (data.estimatedWait||data.eta||data.wait);
-					const label = qp ? ('queue #' + qp) : (est ? ('~'+est+'s') : '~45s');
-					ensureNotice(label);
+				const label = qp ? ('queue #' + qp) : (est ? ('~'+est+'s') : '~45s');
+				if(modal) modal._personalizing = true;
+				hideLoader();
+				ensureNotice(label);
 					updateNoticeProgress(label);
 					if(cacheHeader) wrapper.setAttribute('data-personalized-cache','QUEUED');
 					if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader);
@@ -555,9 +575,22 @@ async function loadVideos(){
 					try{ data = await res.json(); }catch(e){}
 					const isHit = (cacheHeader === 'HIT' && watermarkHeader === 'burned') || watermarkHeader === 'burned' || (data && data.personalized === true && Array.isArray(data.segments) && data.segments.length > 0);
 				if(!isHit){
-						// Still pending — update non-blocking notice but DO NOT change src
-						const label = '~' + Math.max(5, Math.ceil((MAX_MS - (Date.now()-startMs))/1000)) + 's';
-						ensureNotice(label);
+					// Generic manifest served (personalized burn disabled / bypassed) —
+					// the pending signed URL plays as-is.
+					const isGeneric = data && Array.isArray(data.segments) && data.segments.length > 0 && (cacheHeader === 'BYPASS' || watermarkHeader === 'none');
+					if(isGeneric){
+						if(modal) modal._personalizing = false;
+						if(notice && notice.isConnected){ try{ notice.remove(); }catch(e){} }
+						showLoader();
+						setPlaying(pendingVideoUrl);
+						return;
+					}
+					// Still pending — update non-blocking notice but DO NOT set any src
+					// (the generic URL would 404 with personalized_not_ready).
+					const label = '~' + Math.max(5, Math.ceil((MAX_MS - (Date.now()-startMs))/1000)) + 's';
+					if(modal) modal._personalizing = true;
+					hideLoader();
+					ensureNotice(label);
 						updateNoticeProgress(label);
 						if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader);
 						if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader);
@@ -580,6 +613,7 @@ async function loadVideos(){
 					}
 				if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
 				if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
+				if(modal) modal._personalizing = false;
 				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
 				// try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
 				let finalSrc = personalizedUrl;
@@ -591,6 +625,7 @@ async function loadVideos(){
 					const newStripped = stripBase(finalSrc);
 					// Only swap when HIT and finalSrc differs — preserve currentTime
 					if(finalSrc && isHit && curStripped !== newStripped){
+						showLoader();
 						const wasPlaying = !player.paused && !player.ended;
 						const curTime = player.currentTime || 0;
 						try{
@@ -614,6 +649,7 @@ async function loadVideos(){
 				}
 			// 401/403/404 etc -> show login message or remove notice
 			if(res.status === 401 || res.status === 403){
+				if(modal) modal._personalizing = false;
 				ensureNotice('');
 				if(notice && notice.isConnected){
 					const badge = notice.querySelector('.personalizing-notice__badge');
@@ -646,7 +682,7 @@ async function loadVideos(){
 			pollTimer = setTimeout(poll, delay);
 		}
 		poll();
-		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
+		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(modal) modal._personalizing = false; if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
 	}
 	if(typeof window !== 'undefined') window.fetchPersonalizedManifest = fetchPersonalizedManifest;
 
@@ -1007,13 +1043,25 @@ async function loadVideos(){
                 else if(!hasBase) pendingVideoUrl = apiBase + '/' + String(pendingVideoUrl).replace(/^\//,'');
                 if(String(pendingVideoUrl).includes('/manifest')) pendingVideoUrl = video.url || pendingVideoUrl;
             }
-            if(loader) loader.classList.remove('hidden');
+            if(loader){
+                loader.classList.remove('hidden');
+                const loadSpan = loader.querySelector('span');
+                if(loadSpan) loadSpan.textContent = 'Loading…';
+            }
 			clearTimeout(modal._loadTimeout);
-			modal._loadTimeout = setTimeout(function(){
-				if(loader && !loader.classList.contains('hidden')){
-					loader.textContent = 'Unable to load video. Please try again.';
-				}
-			}, 15000);
+            modal._personalizing = false;
+			function armLoadTimeout(){
+				clearTimeout(modal._loadTimeout);
+				modal._loadTimeout = setTimeout(function(){
+					// While the personalized copy is legitimately still burning,
+					// never declare failure — the queue notice owns progress messaging.
+					if(modal._personalizing){ armLoadTimeout(); return; }
+					if(loader && !loader.classList.contains('hidden')){
+						loader.textContent = 'Unable to load video. Please try again.';
+					}
+				}, 15000);
+			}
+            armLoadTimeout();
             // try{ stage.querySelectorAll('.video-watermark-tiled,.video-watermark-canvas').forEach(function(n){ n.remove(); }); }catch(e){}
             // cleanup previous
             // try{ if(modal._unharden) modal._unharden(); }catch(e){}
@@ -1036,8 +1084,13 @@ async function loadVideos(){
 			function onCanPlay(){ clearTimeout(modal._loadTimeout); if(loader) loader.classList.add('hidden'); player.removeEventListener('canplay', onCanPlay); player.removeEventListener('loadeddata', onCanPlay); }
             player.addEventListener('canplay', onCanPlay);
             player.addEventListener('loadeddata', onCanPlay);
-            // also hide on error
-			function onError(){ clearTimeout(modal._loadTimeout); if(loader) loader.textContent = 'Unable to load video. Please try again.'; }
+            // also hide on error — but never while the personalized copy is still
+            // burning (the generic URL 404s with personalized_not_ready by design).
+			function onError(){
+                if(modal._personalizing) return;
+                clearTimeout(modal._loadTimeout);
+                if(loader) loader.textContent = 'Unable to load video. Please try again.';
+            }
             player.addEventListener('error', onError, {once:true});
             // Don't auto-play yet — deferred until personalized manifest confirms
             // bind controls once (if not already)
@@ -1318,12 +1371,14 @@ async function loadVideos(){
             // burn when its manifest reports HIT.
             try{
                 modal._cancelPoll = fetchPersonalizedManifest(video, {
-                    player: player,
-                    stage: stage,
-                    wrapper: stage,
-                    viewer: viewerName,
-                    pendingVideoUrl: pendingVideoUrl
-                });
+                            player: player,
+                            stage: stage,
+                            wrapper: stage,
+                            viewer: viewerName,
+                            pendingVideoUrl: pendingVideoUrl,
+                            modal: modal,
+                            loader: loader
+                        });
             }catch(e){}
         }
         window.openVideoModalAt = openVideoModalAt;
