@@ -7,7 +7,7 @@
 	<meta http-equiv="Pragma" content="no-cache">
 	<meta http-equiv="Expires" content="0">
 	<title>Videos | trax</title>
-	<link rel="stylesheet" href="style.css?v=20260906c">
+	<link rel="stylesheet" href="style.css?v=20260906d">
 </head>
 <body>
 	<main class="container content-page">
@@ -36,6 +36,11 @@
 		<!-- hero removed — thumbnail grid only -->
 		<p id="video-status" class="lede">Loading videos...</p>
 		<p><a id="video-login" class="back-link" href="/auth/discord" hidden>Sign in with Discord</a></p>
+		<section id="video-access-denied" class="access-denied" aria-live="polite">
+			<p class="eyebrow">Restricted area</p>
+			<h3>You’re not allowed here.</h3>
+			<p>This library is available to approved DRAFTED members.</p>
+		</section>
 		<section id="videoGrid" class="sections video-list" data-member-only hidden aria-live="polite" aria-label="Video thumbnail grid"></section>
 	</main>
 
@@ -93,6 +98,6 @@
 	</div>
 
 	<script src="config.js"></script>
-	<script src="videos.js?v=20260906a"></script>
+	<script src="videos.js?v=20260906c"></script>
 </body>
 </html>

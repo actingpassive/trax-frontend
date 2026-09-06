@@ -10,12 +10,19 @@ async function loadVideos(){
 	const list = document.getElementById('videoGrid') || document.getElementById('video-list');
 	if(list) list.classList.add('video-list--grid');
 	const login = document.getElementById('video-login');
+	const accessDenied = document.getElementById('video-access-denied');
 	const countEl = document.getElementById('videoCount');
 	const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
 	let loadedVideos = [];
 	let filteredVideos = [];
 	let filterDay = '';
 	let filterTopic = '';
+	function showAccessDenied(){
+		if(accessDenied) accessDenied.hidden = false;
+		if(status) status.textContent = '';
+		if(login) login.hidden = false;
+		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
+	}
 
 	/* ---- Day/Topic filter (matches admin VIDEO_SECTIONS) ---- */
 	function getQueryFilter(){
@@ -1368,16 +1375,13 @@ list.replaceChildren(...articles);
 		const auth = await authResponse.json();
 		if(auth.accessToken) window.__traxAccessToken = auth.accessToken;
 		if(!auth.user){
-			status.textContent = 'Sign in with Discord to view the video library.';
-			if(login) login.hidden = false;
-			document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
+			showAccessDenied();
 			updateCount('—');
 			return;
 		}
 		const response = await fetch(apiBase + '/api/videos', {credentials:'include'});
 		if(response.status === 403){
-			status.textContent = 'Your Discord account does not have library access yet.';
-			document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
+			showAccessDenied();
 			updateCount('—');
 			return;
 		}
@@ -1385,6 +1389,7 @@ list.replaceChildren(...articles);
 		loadedVideos = await response.json();
 		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
 		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+		if(accessDenied) accessDenied.hidden = true;
 		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = false; });
 		initFilters();
 		await renderVideos();
@@ -1392,8 +1397,7 @@ list.replaceChildren(...articles);
 			if(document.hidden) list.querySelectorAll('video').forEach(function(p){ p.pause(); });
 		});
 	}catch(error){
-		status.textContent = 'Unable to load videos.';
-		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
+		showAccessDenied();
 		updateCount(0);
 	}
 }
