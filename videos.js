@@ -1056,9 +1056,12 @@ async function loadVideos(){
             modal._controlsShowTimer = setTimeout(function(){ modal.classList.remove('is-controls-visible'); }, 3000);
             // reset player
             try{ player.pause(); }catch(e){}
+			player.removeAttribute('src');
+			player.load();
             player.preload = 'metadata';
-            player.crossOrigin = 'use-credentials';
-            player.setAttribute('crossorigin','use-credentials');
+			// Signed media URLs authenticate through their query string; forcing
+			// credentialed CORS can make otherwise playable CDN video fail.
+			player.removeAttribute('crossorigin');
             player.playsInline = true;
             player.setAttribute('playsinline','');
             player.controls = false;
