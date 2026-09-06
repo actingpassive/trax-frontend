@@ -452,6 +452,20 @@ async function loadVideos(){
 				player.load();
 			}catch(e){}
 		}
+		let clientWatermark = null;
+		function ensureClientWatermark(){
+			if(clientWatermark && clientWatermark.isConnected) return;
+			clientWatermark = document.createElement('div');
+			clientWatermark.className = 'video-client-watermark';
+			clientWatermark.setAttribute('aria-hidden', 'true');
+			clientWatermark.textContent = 'drafted.world | @' + sanitizeViewer(viewer);
+			stage.appendChild(clientWatermark);
+		}
+		function removeClientWatermark(){
+			if(clientWatermark && clientWatermark.parentNode) clientWatermark.remove();
+			clientWatermark = null;
+		}
+		ensureClientWatermark();
 		const _accessToken = window.__traxAccessToken || '';
 		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
@@ -576,6 +590,7 @@ async function loadVideos(){
 						if(fill) fill.style.width = '100%';
 						setTimeout(function(){ if(notice && notice.parentNode) notice.remove(); }, 650);
 					}
+				removeClientWatermark();
 				if(cacheHeader) wrapper.setAttribute('data-personalized-cache', cacheHeader||'HIT');
 				if(watermarkHeader) wrapper.setAttribute('data-watermark', watermarkHeader||'burned');
 				// Remove client-side watermark overlay — the personalized burn already has the name baked into the video frames
@@ -630,7 +645,7 @@ async function loadVideos(){
 			pollTimer = setTimeout(poll, delay);
 		}
 		poll();
-		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} };
+		return function cancel(){ cancelled=true; clearTimeout(pollTimer); if(notice&&notice.parentNode) try{ notice.remove(); }catch(e){} removeClientWatermark(); };
 	}
 	if(typeof window !== 'undefined') window.fetchPersonalizedManifest = fetchPersonalizedManifest;
 
