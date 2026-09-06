@@ -423,6 +423,32 @@ async function loadVideos(){
 			return {expires: em?decodeURIComponent(em[1]):null, signature: sm?decodeURIComponent(sm[1]):null};
 		}
 	}
+	// Session-expired popup — strict blocking overlay, only the OK button
+	// dismisses it (goes to Discord login). Idempotent.
+	function showSessionExpired(){
+		const sm = document.getElementById('sessionModal');
+		if(!sm || !sm.classList.contains('hidden')) return;
+		try{
+			const m = window._videoModal && window._videoModal.modal;
+			const p = window._videoModal && window._videoModal.player;
+			if(m){
+				if(m._cancelPoll){ try{ m._cancelPoll(); }catch(e){} m._cancelPoll = null; }
+				m._personalizing = false;
+			}
+			if(p){ try{ p.pause(); }catch(e){} }
+		}catch(e){}
+		sm.classList.remove('hidden');
+	}
+	if(typeof window !== 'undefined') window._showSessionExpired = showSessionExpired;
+	try{
+		const sessionOk = document.getElementById('sessionModalOk');
+		if(sessionOk && !sessionOk._wired){
+			sessionOk._wired = true;
+			sessionOk.addEventListener('click', function(){
+				try{ window.location.href = apiBase + '/auth/discord'; }catch(e){}
+			});
+		}
+	}catch(e){}
 	function fetchPersonalizedManifest(video, ctx){
 		// ctx: {player, stage, wrapper, viewer, useCanvas}
 		const player = ctx.player;
@@ -472,11 +498,12 @@ async function loadVideos(){
 			return function(){};
 		}
 		const _accessToken = window.__traxAccessToken || '';
-		const baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
+		let baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + (_accessToken ? '&token=' + encodeURIComponent(_accessToken) : '');
 		let cancelled = false;
 		let pollTimer = null;
 		let notice = null;
 		let attempt = 0;
+		let refreshedOnce = false;
 		const startMs = Date.now();
 		const MAX_MS = 90000;
 		const ALLOW_GENERIC_FALLBACK = true;
@@ -647,26 +674,29 @@ async function loadVideos(){
 					}
 					return;
 				}
-			// 401/403/404 etc -> show login message or remove notice
+			// 401/403 -> access token dead (expired/superseded). Try one silent
+			// refresh first (covers re-login in another tab minting a fresh token),
+			// then show the blocking session popup until OK is clicked.
 			if(res.status === 401 || res.status === 403){
-				if(modal) modal._personalizing = false;
-				ensureNotice('');
-				if(notice && notice.isConnected){
-					const badge = notice.querySelector('.personalizing-notice__badge');
-					if(badge) badge.textContent = 'Sign in required';
-					const sub = notice.querySelector('.personalizing-notice__sub');
-					if(sub) sub.textContent = 'Please sign in with Discord to watch videos';
-					const bar = notice.querySelector('.personalizing-notice__bar');
-					if(bar) bar.style.display = 'none';
-					const cd = notice.querySelector('.personalizing-notice__countdown');
-					if(cd) cd.textContent = '';
-					notice.style.cursor = 'pointer';
-					notice.style.pointerEvents = 'auto';
-					notice.title = 'Click to sign in';
-					notice.addEventListener('click', function(){
-						window.location.href = apiBase + '/auth/discord';
-					}, {once:true});
+				if(!refreshedOnce){
+					refreshedOnce = true;
+					try{
+						const wres = await fetch(apiBase + '/api/whoami?t=' + Date.now(), {credentials:'include', cache:'no-store'});
+						const wbody = await wres.json().catch(function(){ return {}; });
+						if(wres.ok && wbody && wbody.user && wbody.accessToken && wbody.accessToken !== _accessToken){
+							window.__traxAccessToken = wbody.accessToken;
+							baseManifestUrl = apiBase + '/media/' + encodeURIComponent(video.id) + '/manifest?expires=' + encodeURIComponent(parsed.expires) + '&signature=' + encodeURIComponent(parsed.signature) + '&token=' + encodeURIComponent(wbody.accessToken);
+							pollTimer = setTimeout(poll, 1500);
+							return;
+						}
+					}catch(e){}
 				}
+				if(modal) modal._personalizing = false;
+				cancelled = true;
+				clearTimeout(pollTimer);
+				hideLoader();
+				if(notice && notice.isConnected){ try{ notice.remove(); }catch(e){} }
+				showSessionExpired();
 				return;
 			}
 			if(notice && notice.isConnected){

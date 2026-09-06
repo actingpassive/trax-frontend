@@ -518,4 +518,13 @@ body::before{
 .video-modal.is-maximized .video-modal-stage{flex:1;aspect-ratio:auto;min-height:0}
 .video-modal.is-maximized .video-player-controls{position:absolute;left:0;right:0;bottom:0;z-index:3;transform:translateY(102%);transition:transform 200ms ease}
 .video-modal.is-maximized:hover .video-player-controls,.video-modal.is-maximized.is-controls-visible .video-player-controls,.video-modal.is-maximized:focus-within .video-player-controls{transform:none}
+/* Session-expired popup — strict blocking, only OK dismisses. */
+.session-modal{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.session-modal.hidden{display:none!important}
+.session-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.82)}
+.session-modal-card{position:relative;z-index:1;width:min(92vw,380px);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px 22px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7)}
+.session-modal-card h3{margin:0;font-size:1.05rem;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.session-modal-card p{margin:10px 0 20px;color:var(--muted);font-size:.88rem;line-height:1.55}
+.session-modal-ok{min-width:120px;height:38px;padding:0 22px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accent-ink);font:700 .85rem "Trebuchet MS",Verdana,sans-serif;cursor:pointer}
+.session-modal-ok:hover{filter:brightness(.92)}
 @media (max-width:768px){.video-player-bar{flex-wrap:wrap;gap:8px}.video-player-bar__left,.video-player-bar__right{gap:6px}.video-player-time{font-size:.72rem;min-width:44px}.video-player-volume{width:72px}}
