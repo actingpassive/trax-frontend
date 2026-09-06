@@ -8,6 +8,8 @@ const VIDEO_SECTIONS = {
 async function loadVideos(){
 	const status = document.getElementById('video-status');
 	const list = document.getElementById('videoGrid') || document.getElementById('video-list');
+	const memberSurface = document.querySelectorAll('[data-member-only], .video-filters, #videoGrid');
+	memberSurface.forEach(function(el){ el.hidden = true; });
 	if(list) list.classList.add('video-list--grid');
 	const login = document.getElementById('video-login');
 	const accessDenied = document.getElementById('video-access-denied');
@@ -1390,7 +1392,7 @@ list.replaceChildren(...articles);
 		if(!Array.isArray(loadedVideos)) loadedVideos = Array.isArray(loadedVideos.videos) ? loadedVideos.videos : [];
 		loadedVideos.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
 		if(accessDenied) accessDenied.hidden = true;
-		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = false; });
+		memberSurface.forEach(function(el){ el.hidden = false; });
 		initFilters();
 		await renderVideos();
 		document.addEventListener('visibilitychange', function(){

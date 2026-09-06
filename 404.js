@@ -4,7 +4,7 @@
     var p = location.pathname;
     if(p.endsWith('/homework')||p.endsWith('/videos')||p.endsWith('/trades')||p.endsWith('/nda')){
       var t = p.split('/').pop();
-      location.replace(t+'.html');
+      location.replace(t === 'videos' ? 'videos.html?access=member' : t+'.html');
     }
   }catch(e){}
 })();
