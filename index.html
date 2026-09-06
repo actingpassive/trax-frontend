@@ -19,23 +19,23 @@
       <div class="hero-topline"><span class="brand-mark">DRAFTED<span class="brand-dot">.</span></span><span class="hero-kicker">Private mentorship / <span data-local-time>--:--</span></span><div class="auth-area hero-auth"><span id="user-status">Not signed in</span><a id="login-btn" href="/auth/discord" class="discord-btn" aria-label="Sign in with Discord" title="Sign in with Discord"><img src="https://cdn.simpleicons.org/discord/ffffff" alt="Discord"></a><a id="logout-btn" href="/auth/logout" class="logout-btn" style="display:none;">Logout</a></div></div>
       <div class="hero-inner">
         <div class="hero-text"><p class="eyebrow">Member dashboard</p><h1>Welcome back,<br><em id="welcome-name">trader.</em></h1><div class="hero-actions"><a class="button button-primary" href="videos.html">Continue learning <span aria-hidden="true">↗</span></a></div></div>
-        <div class="hero-card" aria-label="Your progress"><div class="hero-card-glow"></div><div class="hero-card-header"><span>YOUR PROGRESS</span><span class="status-live"><i></i> <span id="progress-status">ON TRACK</span></span></div><div class="hero-card-title">The drafted<br><strong>playbook</strong></div><div class="progress-meta"><span>Module 01 / 04</span><span id="overall-progress">--% complete</span></div><div class="progress-track"><span id="overall-progress-bar" style="width:0%"></span></div><div class="hero-card-footer"><span>Next up</span><strong>Orderblocks <span>→</span></strong></div></div>
+        <div class="hero-card" data-auth-only aria-label="Your progress"><div class="hero-card-glow"></div><div class="hero-card-header"><span>YOUR PROGRESS</span><span class="status-live"><i></i> <span id="progress-status">ON TRACK</span></span></div><div class="hero-card-title">The drafted<br><strong>playbook</strong></div><div class="progress-meta"><span>Module 01 / 04</span><span id="overall-progress">--% complete</span></div><div class="progress-track"><span id="overall-progress-bar" style="width:0%"></span></div><div class="hero-card-footer"><span>Next up</span><strong>Orderblocks <span>→</span></strong></div></div>
       </div>
-      <div class="dashboard-strip" aria-label="Member overview"><div><span class="strip-label">LOCAL DATE</span><strong data-local-date>--</strong></div><div><span class="strip-label">VIDEOS DONE</span><strong><span id="videos-completed">--</span> <small>/ <span id="videos-total">--</span></small></strong></div><div><span class="strip-label">HOMEWORK</span><strong><span id="homework-completed">--</span> <small>/ <span id="homework-total">--</span></small></strong></div><div><span class="strip-label">LOGIN STREAK</span><strong><span id="login-streak">--</span> <small>days</small></strong></div></div>
+      <div class="dashboard-strip" data-auth-only aria-label="Member overview"><div><span class="strip-label">LOCAL DATE</span><strong data-local-date>--</strong></div><div><span class="strip-label">VIDEOS DONE</span><strong><span id="videos-completed">--</span> <small>/ <span id="videos-total">--</span></small></strong></div><div><span class="strip-label">HOMEWORK</span><strong><span id="homework-completed">--</span> <small>/ <span id="homework-total">--</span></small></strong></div><div><span class="strip-label">LOGIN STREAK</span><strong><span id="login-streak">--</span> <small>days</small></strong></div></div>
     </header>
 
-    <nav class="page-links" aria-label="Main navigation">
+    <nav class="page-links" data-auth-only aria-label="Main navigation">
       <a href="homework.html"><strong>Homework</strong></a>
       <a href="trades.html"><strong>Trades</strong></a>
       <a href="videos.html"><strong>Videos</strong><small>Library</small></a>
       <a href="nda.html"><strong>Submit an NDA</strong></a>
     </nav>
 
-    <section class="portal-section access-section"><div><p class="eyebrow">Access</p><h2>One room. Full focus.</h2></div><div class="access-copy"><p class="lede">One-time access to the full curriculum, private community, and the systems behind the setups.</p><a class="text-link" href="nda.html">Apply for access <span aria-hidden="true">↗</span></a></div></section>
+    <section class="portal-section access-section" data-auth-only><div><p class="eyebrow">Access</p><h2>One room. Full focus.</h2></div><div class="access-copy"><p class="lede">One-time access to the full curriculum, private community, and the systems behind the setups.</p><a class="text-link" href="nda.html">Apply for access <span aria-hidden="true">↗</span></a></div></section>
   </main>
 
   <script src="config.js"></script>
-  <script src="auth.js"></script>
+  <script src="auth.js?v=20260906a"></script>
 </body>
 </html>
 

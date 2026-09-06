@@ -5,6 +5,11 @@ function isSafeAvatarUrl(url){
   }catch(e){ return false; }
 }
 async function refreshAuth(){
+  document.querySelectorAll('[data-auth-only]').forEach(el=>{
+    el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('inert', '');
+  });
   try{
     const base = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ''));
     const r = await fetch(`${base}/api/whoami?t=` + Date.now(), {credentials: 'include', cache: 'no-store'});
@@ -39,7 +44,7 @@ async function refreshAuth(){
     const allowed = j.isOwner || j.isWhitelisted;
     document.querySelectorAll('[data-auth-only]').forEach(el=>{
       // Auth gate: CSS alone not sufficient — also set aria-hidden and disable interactions when not allowed
-      el.style.display = allowed ? 'inline-flex' : 'none';
+      el.style.display = allowed ? '' : 'none';
       el.setAttribute('aria-hidden', allowed ? 'false' : 'true');
       if(!allowed) el.setAttribute('inert','');
       else el.removeAttribute('inert');

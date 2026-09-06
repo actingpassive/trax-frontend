@@ -1372,12 +1372,14 @@ list.replaceChildren(...articles);
 		if(!auth.user){
 			status.textContent = 'Sign in with Discord to view the video library.';
 			if(login) login.hidden = false;
+			document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
 			updateCount('—');
 			return;
 		}
 		const response = await fetch(apiBase + '/api/videos', {credentials:'include'});
 		if(response.status === 403){
 			status.textContent = 'Your Discord account does not have library access yet.';
+			document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
 			updateCount('—');
 			return;
 		}
@@ -1391,6 +1393,7 @@ list.replaceChildren(...articles);
 		});
 	}catch(error){
 		status.textContent = 'Unable to load videos.';
+		document.querySelectorAll('[data-member-only]').forEach(function(el){ el.hidden = true; });
 		updateCount(0);
 	}
 }
