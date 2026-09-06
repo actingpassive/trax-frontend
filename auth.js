@@ -15,11 +15,13 @@ async function refreshAuth(){
     const r = await fetch(`${base}/api/whoami?t=` + Date.now(), {credentials: 'include', cache: 'no-store'});
     const j = await r.json();
     const status = document.getElementById('user-status');
+    const welcomeName = document.getElementById('welcome-name');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     if(j.user){
       const allowed = j.isOwner || j.isWhitelisted;
       const safeName = String(j.user.username || '').slice(0,32);
+      if(welcomeName) welcomeName.textContent = safeName || 'trader.';
       if(j.user.avatar && isSafeAvatarUrl(j.user.avatar)){
         const img = document.createElement('img');
         img.src = j.user.avatar;
@@ -38,6 +40,7 @@ async function refreshAuth(){
       if(logoutBtn) logoutBtn.style.display = 'inline-flex';
     } else {
       if(status) status.textContent = 'Not signed in';
+      if(welcomeName) welcomeName.textContent = 'trader.';
       if(loginBtn) loginBtn.style.display = 'inline-flex';
       if(logoutBtn) logoutBtn.style.display = 'none';
     }
