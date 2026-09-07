@@ -89,12 +89,16 @@ body::before{
 
 .page-links{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  justify-content: center;
   gap:1px;
   background:var(--bg);
   border:1px solid var(--line);
   margin-top:56px;
   box-shadow:0 20px 70px rgba(0,0,0,.18);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .page-links a{
   display:flex;
