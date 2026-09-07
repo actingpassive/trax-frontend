@@ -88,17 +88,14 @@ body::before{
 .content-page .lede{margin-bottom:46px}
 
 .page-links{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
-  justify-content: center;
+  display:flex;
+  justify-content:center;
   gap:1px;
   background:var(--bg);
   border:1px solid var(--line);
-  margin-top:56px;
+  margin:56px auto 0;
   box-shadow:0 20px 70px rgba(0,0,0,.18);
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width:600px;
 }
 .page-links a{
   display:flex;
