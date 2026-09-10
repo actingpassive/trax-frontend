@@ -153,7 +153,7 @@ async function loadVideos(){
 		populateFilterTopic();
 		if(filterTopic && filterDay){
 			// ensure exact casing from VIDEO_SECTIONS is used for display sync
-			const match = VIDEO_SECTIONS[filterDay] ? VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
+			const match = (VIDEO_SECTIONS[filterDay] ? VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); }) : null);
 			if(match) filterTopic = match;
 		}
 		dayPills.forEach(function(b){
