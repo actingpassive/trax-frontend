@@ -154,7 +154,10 @@ async function loadVideos(){
         });
         populateFilterTopic();
         if(filterTopic && filterDay){
-            const match = (VIDEO_SECTIONS[filterDay] ? VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); }) : null);
+            let match = null;
+            if (VIDEO_SECTIONS[filterDay]) {
+                match = VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
+            }
             if(match) filterTopic = match;
         }
         dayPills.forEach(function(b){
