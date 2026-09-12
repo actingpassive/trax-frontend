@@ -15,11 +15,13 @@ async function loadVideos(){
     const accessDenied = document.getElementById('video-access-denied');
     const countEl = document.getElementById('videoCount');
     const apiBase = (typeof API_BASE !== 'undefined' ? API_BASE : (typeof window !== 'undefined' && window.API_BASE ? window.API_BASE : ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') && location.port !== '3000' && location.port !== '' ? 'http://localhost:3000' : '')));
-    let loadedVideos = [];
-    let filteredVideos = [];
-    let accessGranted = false;
-    let filterDay = '';
-    let filterTopic = '';
+    
+    // These are now global to the file to prevent scoping bugs
+    // let loadedVideos = []; // Moved outside
+    // let filteredVideos = []; // Moved outside
+    // let accessGranted = false; // Moved outside
+    // let filterDay = ''; // Moved outside
+    // let filterTopic = ''; // Moved outside
 
     function showAccessDenied(){
         if(accessDenied) accessDenied.hidden = false;
