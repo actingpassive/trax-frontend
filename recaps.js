@@ -59,11 +59,15 @@ async function loadVideos(){
     }
 
     function getFilteredVideos(){
-        return loadedVideos.filter(function(v){
+        console.log('[Debug] Total loadedVideos:', loadedVideos.length);
+        console.log('[Debug] Current Filters:', { filterDay, filterTopic });
+        const filtered = loadedVideos.filter(function(v){
             const dayOk = !filterDay || v.day === filterDay;
             const topicOk = !filterTopic || (v.topic && String(v.topic).toLowerCase() === String(filterTopic).toLowerCase());
             return dayOk && topicOk;
         });
+        console.log('[Debug] Videos after filter:', filtered.length);
+        return filtered;
     }
 
     function populateFilterTopic(){
