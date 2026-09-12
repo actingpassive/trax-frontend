@@ -5,6 +5,12 @@ const VIDEO_SECTIONS = {
     "Day 4": ["Net GEX", "Pinning", "0dte", "Open Interest"]
 };
 
+let loadedVideos = [];
+let filteredVideos = [];
+let accessGranted = false;
+let filterDay = '';
+let filterTopic = '';
+
 async function loadVideos(){
     const status = document.getElementById('video-status');
     const list = document.getElementById('videoGrid') || document.getElementById('video-list');
@@ -76,16 +82,7 @@ async function loadVideos(){
         const container = document.getElementById('topicPills');
         if(!container) return;
         container.replaceChildren();
-        if(!filterDay || !VIDEO_SECTIONS[filterDay]){
-            const empty = document.createElement('button');
-            empty.type = 'button';
-            empty.className = 'topic-pill is-disabled';
-            empty.disabled = true;
-            empty.setAttribute('aria-disabled','true');
-            empty.textContent = 'Select Day first';
-            container.appendChild(empty);
-            return;
-        }
+        
         const allBtn = document.createElement('button');
         allBtn.type = 'button';
         allBtn.className = 'topic-pill';
@@ -94,17 +91,10 @@ async function loadVideos(){
         if(!filterTopic) allBtn.classList.add('is-active');
         allBtn.textContent = 'All Topics';
         container.appendChild(allBtn);
-        VIDEO_SECTIONS[filterDay].forEach(function(t){
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'topic-pill';
-            b.dataset.topic = t;
-            const active = filterTopic && String(filterTopic).toLowerCase() === String(t).toLowerCase();
-            b.setAttribute('aria-pressed', active ? 'true' : 'false');
-            if(active) b.classList.add('is-active');
-            b.textContent = t;
-            container.appendChild(b);
-        });
+
+        // Recaps no longer use the fixed VIDEO_SECTIONS list
+        // Topic pills will only be generated if we implement a dynamic list from loadedVideos
+        
         container.querySelectorAll('.topic-pill').forEach(function(btn){
             if(btn.disabled) return;
             btn.addEventListener('click', function(){
@@ -141,17 +131,14 @@ async function loadVideos(){
         let storedTopic = '';
         try{ storedDay = localStorage.getItem('drafted-video-filter-day') || ''; }catch(e){}
         try{ storedTopic = localStorage.getItem('drafted-video-filter-topic') || ''; }catch(e){}
-        if(q.qDay && VIDEO_SECTIONS[q.qDay]) filterDay = q.qDay;
-        else if(storedDay && VIDEO_SECTIONS[storedDay]) filterDay = storedDay;
+        if(q.qDay) filterDay = q.qDay;
+        else if(storedDay) filterDay = storedDay;
         else filterDay = '';
         if(q.qTopic) filterTopic = q.qTopic;
         else if(storedTopic) filterTopic = storedTopic;
         else filterTopic = '';
         if(!filterDay) filterTopic = '';
-        else if(filterTopic){
-            const valid = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
-            if(!valid) filterTopic = '';
-        }
+        
         dayPills.forEach(function(b){
             const d = b.getAttribute('data-day') || '';
             const active = (d === filterDay) || (!filterDay && d === '');
@@ -159,22 +146,11 @@ async function loadVideos(){
             b.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
         populateFilterTopic();
-        if(filterTopic && filterDay){
-            let match = null;
-            if (VIDEO_SECTIONS[filterDay]) {
-                match = VIDEO_SECTIONS[filterDay].find(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
-            }
-            if(match) filterTopic = match;
-        }
         dayPills.forEach(function(b){
             b.addEventListener('click', function(){
                 const next = b.getAttribute('data-day') || '';
                 if(next === filterDay) return;
                 filterDay = next;
-                if(filterDay && filterTopic){
-                    const ok = VIDEO_SECTIONS[filterDay] && VIDEO_SECTIONS[filterDay].some(function(t){ return String(t).toLowerCase() === String(filterTopic).toLowerCase(); });
-                    if(!ok) filterTopic = '';
-                }
                 if(!filterDay) filterTopic = '';
                 dayPills.forEach(function(btn){
                     const d = btn.getAttribute('data-day') || '';
