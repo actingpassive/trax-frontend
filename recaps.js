@@ -396,6 +396,9 @@ async function loadVideos(){
                     return;
                 }
             }
+            catch(e) {
+                console.error('Polling error:', e);
+            }
             const delay = Math.min(8000, Math.round(3000 * Math.pow(1.35, attempt-1)));
             pollTimer = setTimeout(poll, delay);
         }
@@ -443,7 +446,7 @@ async function loadVideos(){
         return wrap;
     }
 
-    function renderVideos(){
+    async function renderVideos(){
         if(!loadedVideos.length){
             list.replaceChildren();
             const empty = document.createElement('div');
