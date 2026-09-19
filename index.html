@@ -4,30 +4,100 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="api-base" content="https://api.drafted.world">
-  <title>drafted</title>
+  <title>drafted | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <script>
     if (location.pathname.endsWith('/index.html')) {
       location.replace('./' + location.search + location.hash);
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=20260906">
+  <link rel="stylesheet" href="style.css?v=20260919">
 </head>
 <body>
   <main class="container">
-    <header class="hero portal-hero">
-      <div class="hero-topline"><span class="brand-mark">DRAFTED<span class="brand-dot">.</span></span><span class="hero-kicker">Private mentorship / <span data-local-time>--:--</span></span><div class="auth-area hero-auth"><span id="user-status">Not signed in</span><a id="login-btn" href="/auth/discord" class="discord-btn" aria-label="Sign in with Discord" title="Sign in with Discord"><img src="https://cdn.simpleicons.org/discord/ffffff" alt="Discord"></a><a id="logout-btn" href="/auth/logout" class="logout-btn" style="display:none;">Logout</a></div></div>
-      <div class="hero-inner">
-        <div class="hero-text"><p class="eyebrow">Member dashboard</p><h1>Welcome back,<br><em id="welcome-name">trader.</em></h1><div class="hero-actions"><a class="button button-primary" href="videos.html?access=member">Continue learning <span aria-hidden="true">↗</span></a><a class="button" href="recaps.html?access=member">Recaps <span aria-hidden="true">↗</span></a></div></div>
-        <div class="hero-card" data-auth-only aria-label="Your progress"><div class="hero-card-glow"></div><div class="hero-card-header"><span>YOUR PROGRESS</span><span class="status-live"><i></i> <span id="progress-status">ON TRACK</span></span></div><div class="hero-card-title">Drafted<br><strong>Progress</strong></div><div class="progress-meta"><span>Module 01 / 04</span><span id="overall-progress">--% complete</span></div><div class="progress-track"><span id="overall-progress-bar" style="width:0%"></span></div><div class="hero-card-footer"><span>Next up</span><strong>Videos <span>→</span></strong></div></div>
+    <div class="luxury-header">
+      <header class="hero-topline">
+        <div class="brand-mark">DRAFTED<span class="brand-dot">.</span></div>
+        <div class="hero-kicker">Private mentorship / <span data-local-time>--:--</span></div>
+        <div class="hero-auth">
+          <span id="user-status">Not signed in</span>
+          <a id="login-btn" href="/auth/discord" class="discord-btn" aria-label="Sign in with Discord" title="Sign in with Discord">
+            <img src="https://cdn.simpleicons.org/discord/ffffff" alt="Discord" style="width:100%; height:100%; object-fit:cover;">
+          </a>
+          <a id="logout-btn" href="/auth/logout" class="logout-btn" style="display:none; color:var(--muted); text-decoration:none; font-size:0.8rem;">Logout</a>
+        </div>
+      </header>
+    </div>
+
+    <section class="hero-inner">
+      <div class="hero-text">
+        <span class="eyebrow">Member dashboard</span>
+        <h1>Welcome back,<br><em id="welcome-name">trader.</em></h1>
+        <div class="hero-actions">
+          <a class="button button-primary" href="videos.html?access=member">Continue learning <span>↗</span></a>
+          <a class="button button-secondary" href="recaps.html?access=member">View Recaps <span>↗</span></a>
+        </div>
       </div>
-      <div class="dashboard-strip" data-auth-only aria-label="Member overview"><div><span class="strip-label">LOCAL DATE</span><strong data-local-date>--</strong></div><div><span class="strip-label">VIDEOS DONE</span><strong><span id="videos-completed">--</span> <small>/ <span id="videos-total">--</span></small></strong></div><div><span class="strip-label">HOMEWORK</span><strong><span id="homework-completed">--</span> <small>/ <span id="homework-total">--</span></small></strong></div><div><span class="strip-label">LOGIN STREAK</span><strong><span id="login-streak">--</span> <small>days</small></strong></div></div>
-    </header>
 
-    <nav class="page-links" data-auth-only aria-label="Main navigation">
-      <a href="videos.html?access=member"><strong>Videos</strong><small>Library</small></a>
-			<a href="recaps.html?access=member"><strong>Recaps</strong><small>Sessions</small></a>
-    </nav>
+      <div class="hero-card" data-auth-only>
+        <div class="hero-card-header">
+          <span>Your Progress</span>
+          <span class="status-live"><i></i> <span id="progress-status">ON TRACK</span></span>
+        </div>
+        <div class="hero-card-title">Drafted<br><strong>Progress</strong></div>
+        <div class="progress-meta">
+          <span>Module 01 / 04</span>
+          <span id="overall-progress">--% complete</span>
+        </div>
+        <div class="progress-track">
+          <span id="overall-progress-bar" style="width:0%"></span>
+        </div>
+        <div class="hero-card-footer">
+          <span>Next up</span>
+          <strong>Videos <span>→</span></strong>
+        </div>
+      </div>
 
+      <div class="dashboard-strip" data-auth-only>
+        <div class="strip-item">
+          <span class="strip-label">Local Date</span>
+          <strong data-local-date>--</strong>
+        </div>
+        <div class="strip-item">
+          <span class="strip-label">Videos Done</span>
+          <strong><span id="videos-completed">--</span> <small>/ <span id="videos-total">--</span></small></strong>
+        </div>
+        <div class="strip-item">
+          <span class="strip-label">Homework</span>
+          <strong><span id="homework-completed">--</span> <small>/ <span id="homework-total">--</span></small></strong>
+        </div>
+        <div class="strip-item">
+          <span class="strip-label">Login Streak</span>
+          <strong><span id="login-streak">--</span> <small>days</small></strong>
+        </div>
+      </div>
+
+      <nav class="page-links" data-auth-only>
+        <a href="videos.html?access=member">
+          <strong>Videos</strong>
+          <small>Explore the full library of mentorship videos</small>
+        </a>
+        <a href="recaps.html?access=member">
+          <strong>Recaps</strong>
+          <small>Review previous session summaries and insights</small>
+        </a>
+        <a href="homework.html?access=member">
+          <strong>Homework</strong>
+          <small>Complete your assignments and track growth</small>
+        </a>
+        <a href="trades.html?access=member">
+          <strong>Trades</strong>
+          <small>Analyze your trade history and performance</small>
+        </a>
+      </nav>
+    </section>
   </main>
 
   <script src="config.js"></script>
